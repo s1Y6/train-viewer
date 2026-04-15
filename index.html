@@ -1,56 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Train Viewer v7.2</title>
-</head>
-
-<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
-
-<!-- HEADER -->
-<div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.2</h2>
-  <p style="margin:0;color:yellow;">Station labels + DD-MM-YYYY format</p>
-</div>
-
-<hr>
-
-<!-- ROUTE -->
-<p><b>Route</b></p>
-
-<select id="route" style="background:white;color:black;">
-
-  <option value="KX-NCL">KX – Kings Cross → NCL – Newcastle</option>
-  <option value="NCL-KX">NCL – Newcastle → KX – Kings Cross</option>
-  <option value="STP-NCL">STP – St Pancras → NCL – Newcastle</option>
-  <option value="NCL-STP">NCL – Newcastle → STP – St Pancras</option>
-
-</select>
-
-<p><b>Date</b></p>
-
-<input type="date"
-       id="date"
-       style="background:white;color:black;border:1px solid lime;">
-
-<p><b>Time</b></p>
-
-<input type="time"
-       id="time"
-       style="background:white;color:black;border:1px solid lime;">
-
-<br><br>
-
-<button onclick="run()" style="background:lime;color:black;">
-  Search Trains
-</button>
-
-<hr>
-
-<div id="output">Enter details and press search</div>
-
 <script>
 
+var selectedTime = 0;
+var selectedRoute = "";
+var selectedDate = "";
+
+// INIT
 function init() {
   var now = new Date();
 
@@ -63,41 +17,88 @@ function init() {
 
 // FORMAT DATE → DD-MM-YYYY
 function formatDate(input) {
+  if (!input) return "Not set";
+
   var parts = input.split("-");
   return parts[2] + "-" + parts[1] + "-" + parts[0];
 }
 
+// MAIN RUN
 function run() {
 
-  var route = document.getElementById("route").value;
-  var dateRaw = document.getElementById("date").value;
+  selectedRoute = document.getElementById("route").value;
+  selectedDate = document.getElementById("date").value;
+
   var time = document.getElementById("time").value;
 
-  var html = "<b>Train Viewer v7.2</b><br><br>";
+  var parts = time.split(":");
+  selectedTime = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
-  html += "<b>Route:</b> " + route + "<br>";
-  html += "<b>Date:</b> " + formatDate(dateRaw) + "<br>";
+  var html = "<b>Train Viewer v7.3</b><br><br>";
+
+  html += "<b>Date:</b> " + formatDate(selectedDate) + "<br>";
   html += "<b>Time:</b> " + time + "<br><hr>";
 
-  html += buildTrains(time);
+  html += buildTrains();
 
   document.getElementById("output").innerHTML = html;
 }
 
-function buildTrains(timeStr) {
-
-  var parts = timeStr.split(":");
-  var base = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+// BUILD TRAIN LIST (CLICKABLE)
+function buildTrains() {
 
   var out = "";
 
-  out += "🚆 Before - " + format(base - 25) + "<br>";
-  out += "🚆 ⭐ Closest - " + format(base) + "<br>";
-  out += "🚆 After - " + format(base + 25) + "<br>";
+  out += "<div onclick='showTrain(" + (selectedTime - 25) + ")'>🚆 Before - " + format(selectedTime - 25) + "</div><br>";
+
+  out += "<div onclick='showTrain(" + selectedTime + ")'><b>🚆 ⭐ Closest - " + format(selectedTime) + "</b></div><br>";
+
+  out += "<div onclick='showTrain(" + (selectedTime + 25) + ")'>🚆 After - " + format(selectedTime + 25) + "</div>";
 
   return out;
 }
 
+// SHOW TRAIN DETAILS (STAGE 4)
+function showTrain(mins) {
+
+  var operator = pickOperator(mins);
+  var platform = (mins % 10) + 1;
+  var delay = mins % 7;
+
+  var depart = format(mins);
+  var arrive = format(mins + 155); // ~2h35
+
+  var html = "<b>Train Viewer v7.3</b><br><br>";
+
+  html += "<b>Operator:</b> " + operator + "<br><br>";
+
+  html += "<b>PLATFORM: " + platform + "</b><br><br>";
+
+  if (delay === 0) {
+    html += "Status: On time<br><br>";
+  } else {
+    html += "Status: +" + delay + " min late<br><br>";
+  }
+
+  html += "Depart: " + depart + "<br>";
+  html += "Arrive: " + arrive + "<br><br>";
+
+  html += "<button onclick='run()'>← Back</button>";
+
+  document.getElementById("output").innerHTML = html;
+}
+
+// SIMPLE OPERATOR ROTATION
+function pickOperator(mins) {
+
+  var r = mins % 3;
+
+  if (r === 0) return "LNER";
+  if (r === 1) return "Lumo";
+  return "CrossCountry";
+}
+
+// FORMAT TIME
 function format(mins) {
 
   mins = mins % 1440;
@@ -115,6 +116,3 @@ function format(mins) {
 window.onload = init;
 
 </script>
-
-</body>
-</html>
