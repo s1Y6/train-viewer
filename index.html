@@ -36,32 +36,60 @@
 let route = "";
 let baseTime = new Date();
 
-// load recent
+// SAFE recent loader
 function loadRecent() {
   const r = localStorage.getItem("recentTrip");
+
   document.getElementById("recent").innerText =
     "Recent: " + (r ? r : "None");
 }
 
-// set route
-function setRoute(r) {
-  route = r;
-  run();
+// CENTRAL RENDER (always runs UI)
+function render() {
+  if (!route) {
+    loadRecent();
+    return;
+  }
+
+  const trains = generateTrains(baseTime);
+
+  const timeStr =
+    baseTime.getHours() + ":" +
+    String(baseTime.getMinutes()).padStart(2, "0");
+
+  localStorage.setItem("recentTrip", route + " @ " + timeStr);
+
+  loadRecent();
+
+  let html = "<h3>Route: " + route + "</h3>";
+  html += "<p>Selected: " + timeStr + "</p><hr>";
+
+  for (let i = 0; i < trains.length; i++) {
+    html += "🚆 " + trains[i].label + " - " + trains[i].time + "<br>";
+  }
+
+  document.getElementById("output").innerHTML = html;
 }
 
-// time controls
+// ROUTE SELECT
+function setRoute(r) {
+  route = r;
+  render();
+}
+
+// TIME CONTROL
 function setNow() {
   baseTime = new Date();
-  run();
+  render();
 }
 
 function shift(mins) {
   baseTime = new Date();
   baseTime.setMinutes(baseTime.getMinutes() + mins);
-  run();
+  render();
 }
 
-// fake timetable generator (we replace with real API later)
+// TRAIN ENGINE
 function generateTrains(base) {
   let trains = [];
 
@@ -81,30 +109,11 @@ function generateTrains(base) {
   return trains;
 }
 
-// main engine
-function run() {
-  if (!route) return;
-
-  const trains = generateTrains(baseTime);
-
-  const timeStr =
-    baseTime.getHours() + ":" +
-    String(baseTime.getMinutes()).padStart(2, "0");
-
-  localStorage.setItem("recentTrip", route + " @ " + timeStr);
+// INIT (IMPORTANT FIX)
+window.onload = function() {
   loadRecent();
-
-  let html = "<h3>Route: " + route + "</h3>";
-  html += "<p>Selected: " + timeStr + "</p><hr>";
-
-  for (let i = 0; i < trains.length; i++) {
-    html += "🚆 " + trains[i].label + " - " + trains[i].time + "<br>";
-  }
-
-  document.getElementById("output").innerHTML = html;
-}
-
-loadRecent();
+  render();
+};
 
 </script>
 
