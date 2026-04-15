@@ -2,105 +2,85 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v5</title>
+  <title>Train Viewer v7</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v5</h2>
-<p style="color:yellow;">Planner mode (date + time + average time input)</p>
+<h2>🚆 Train Viewer v7</h2>
+<p style="color:yellow;">Real input planner (full-screen editor mode)</p>
 
 <hr>
 
-<!-- ROUTES -->
+<!-- REAL INPUTS -->
 <p><b>Route</b></p>
-<a href="#KX-NCL">KX → NCL</a><br>
-<a href="#NCL-KX">NCL → KX</a><br>
-<a href="#STP-NCL">STP → NCL</a><br>
-<a href="#NCL-STP">NCL → STP</a><br>
+<select id="route">
+  <option value="KX-NCL">KX → NCL</option>
+  <option value="NCL-KX">NCL → KX</option>
+  <option value="STP-NCL">STP → NCL</option>
+  <option value="NCL-STP">NCL → STP</option>
+</select>
+
+<p><b>Date</b></p>
+<input type="date" id="date">
+
+<p><b>Time</b></p>
+<input type="time" id="time">
+
+<br><br>
+
+<button onclick="run()">Search Trains</button>
 
 <hr>
 
-<!-- DATE + TIME INPUT (NO FORMS - NOKIA SAFE) -->
-<p><b>Date & Time (tap links)</b></p>
-
-<a href="#now">Now (default)</a><br>
-<a href="#t-30">-30 min</a>
-<a href="#t0">Exact</a>
-<a href="#t+30">+30 min</a>
-<a href="#t+60">+1 hour</a>
-
-<hr>
-
-<div id="output">Select route</div>
+<div id="output">Enter details and press search</div>
 
 <script>
 
-let route = "";
-let selectedTime = new Date();
+function init() {
+  // default values = NOW
+  var now = new Date();
 
-// ROUTING ENGINE
-function render() {
-  var h = location.hash;
+  document.getElementById("date").value =
+    now.toISOString().split("T")[0];
 
-  var html = "<b>Train Viewer v5 (OG Planner)</b><br><br>";
+  document.getElementById("time").value =
+    now.toTimeString().slice(0,5);
+}
 
-  if (!h || h === "#") {
-    html += "Select route + time.";
-    document.getElementById("output").innerHTML = html;
-    return;
-  }
+function run() {
+  var route = document.getElementById("route").value;
+  var date = document.getElementById("date").value;
+  var time = document.getElementById("time").value;
 
-  // ROUTES
-  if (h === "#KX-NCL") route = "Kings Cross → Newcastle";
-  if (h === "#NCL-KX") route = "Newcastle → Kings Cross";
-  if (h === "#STP-NCL") route = "St Pancras → Newcastle";
-  if (h === "#NCL-STP") route = "Newcastle → St Pancras";
+  var html = "<b>Train Viewer v7</b><br><br>";
 
-  // TIME SETTING (DEFAULT = NOW)
-  if (h === "#now") selectedTime = new Date();
-  if (h === "#t-30") selectedTime = new Date(Date.now() - 30 * 60000);
-  if (h === "#t0") selectedTime = new Date();
-  if (h === "#t+30") selectedTime = new Date(Date.now() + 30 * 60000);
-  if (h === "#t+60") selectedTime = new Date(Date.now() + 60 * 60000);
+  html += "<b>Route:</b> " + route + "<br>";
+  html += "<b>Date:</b> " + date + "<br>";
+  html += "<b>Time:</b> " + time + "<br><hr>";
 
-  // OUTPUT
-  html += "<b>Route:</b> " + (route || "Not selected") + "<br>";
-
-  html += "<b>Date:</b> " + selectedTime.toDateString() + "<br>";
-  html += "<b>Time:</b> " + formatTime(selectedTime) + "<br><hr>";
-
-  html += buildTrains();
+  html += buildTrains(time);
 
   document.getElementById("output").innerHTML = html;
 }
 
-// TRAIN ENGINE (REALISTIC 3 TRAIN MATCH)
-function buildTrains() {
-  var base = selectedTime.getHours() * 60 + selectedTime.getMinutes();
+// SIMPLE TRAIN ENGINE
+function buildTrains(timeStr) {
+
+  var parts = timeStr.split(":");
+  var base = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
   var out = "";
 
-  out += "🚆 Before - " + formatMinutes(base - 25) + "<br>";
-  out += "🚆 ⭐ Closest - " + formatMinutes(base) + "<br>";
-  out += "🚆 After - " + formatMinutes(base + 25) + "<br>";
+  out += "🚆 Before - " + format(base - 25) + "<br>";
+  out += "🚆 ⭐ Closest - " + format(base) + "<br>";
+  out += "🚆 After - " + format(base + 25) + "<br>";
 
   return out;
 }
 
-// FORMAT TIME
-function formatTime(d) {
-  var h = d.getHours();
-  var m = d.getMinutes();
-
-  if (h < 10) h = "0" + h;
-  if (m < 10) m = "0" + m;
-
-  return h + ":" + m;
-}
-
 // FORMAT MINUTES
-function formatMinutes(mins) {
+function format(mins) {
   mins = mins % 1440;
   if (mins < 0) mins += 1440;
 
@@ -113,8 +93,7 @@ function formatMinutes(mins) {
   return h + ":" + m;
 }
 
-window.onload = render;
-window.onhashchange = render;
+window.onload = init;
 
 </script>
 
