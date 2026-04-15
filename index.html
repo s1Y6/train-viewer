@@ -2,19 +2,22 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v7</title>
+  <title>Train Viewer v7.1</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v7</h2>
-<p style="color:yellow;">Real input planner (full-screen editor mode)</p>
+<!-- HEADER FIXED (FORCES VISIBILITY ON NOKIA) -->
+<div style="border-bottom:1px solid lime;padding-bottom:5px;">
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.1</h2>
+  <p style="margin:0;color:yellow;">Fixed input visibility + Nokia header stability</p>
+</div>
 
 <hr>
 
 <!-- REAL INPUTS -->
 <p><b>Route</b></p>
-<select id="route">
+<select id="route" style="background:white;color:black;">
   <option value="KX-NCL">KX → NCL</option>
   <option value="NCL-KX">NCL → KX</option>
   <option value="STP-NCL">STP → NCL</option>
@@ -22,14 +25,20 @@
 </select>
 
 <p><b>Date</b></p>
-<input type="date" id="date">
+<input type="date"
+       id="date"
+       style="background:white;color:black;border:1px solid lime;">
 
 <p><b>Time</b></p>
-<input type="time" id="time">
+<input type="time"
+       id="time"
+       style="background:white;color:black;border:1px solid lime;">
 
 <br><br>
 
-<button onclick="run()">Search Trains</button>
+<button onclick="run()" style="background:lime;color:black;">
+  Search Trains
+</button>
 
 <hr>
 
@@ -38,7 +47,6 @@
 <script>
 
 function init() {
-  // default values = NOW
   var now = new Date();
 
   document.getElementById("date").value =
@@ -53,7 +61,7 @@ function run() {
   var date = document.getElementById("date").value;
   var time = document.getElementById("time").value;
 
-  var html = "<b>Train Viewer v7</b><br><br>";
+  var html = "<b>Train Viewer v7.1</b><br><br>";
 
   html += "<b>Route:</b> " + route + "<br>";
   html += "<b>Date:</b> " + date + "<br>";
@@ -64,9 +72,7 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// SIMPLE TRAIN ENGINE
 function buildTrains(timeStr) {
-
   var parts = timeStr.split(":");
   var base = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
@@ -79,7 +85,6 @@ function buildTrains(timeStr) {
   return out;
 }
 
-// FORMAT MINUTES
 function format(mins) {
   mins = mins % 1440;
   if (mins < 0) mins += 1440;
