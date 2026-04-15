@@ -2,17 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v4</title>
+  <title>Train Viewer v5</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v4</h2>
-<p style="color:yellow;">Next-train logic upgrade</p>
+<h2>🚆 Train Viewer v5</h2>
+<p style="color:yellow;">Planner mode (date + time + average time input)</p>
 
 <hr>
 
-<p><b>Routes</b></p>
+<!-- ROUTES -->
+<p><b>Route</b></p>
 <a href="#KX-NCL">KX → NCL</a><br>
 <a href="#NCL-KX">NCL → KX</a><br>
 <a href="#STP-NCL">STP → NCL</a><br>
@@ -20,66 +21,86 @@
 
 <hr>
 
-<p><b>Time</b></p>
-<a href="#now">Now</a>
-<a href="#m60">-1h</a>
-<a href="#p60">+1h</a>
+<!-- DATE + TIME INPUT (NO FORMS - NOKIA SAFE) -->
+<p><b>Date & Time (tap links)</b></p>
+
+<a href="#now">Now (default)</a><br>
+<a href="#t-30">-30 min</a>
+<a href="#t0">Exact</a>
+<a href="#t+30">+30 min</a>
+<a href="#t+60">+1 hour</a>
 
 <hr>
 
-<div id="output">Select a route</div>
+<div id="output">Select route</div>
 
 <script>
 
-function render() {
-  var h = window.location.hash;
+let route = "";
+let selectedTime = new Date();
 
-  var html = "<b>Train Viewer v4</b><br><br>";
+// ROUTING ENGINE
+function render() {
+  var h = location.hash;
+
+  var html = "<b>Train Viewer v5 (OG Planner)</b><br><br>";
 
   if (!h || h === "#") {
-    html += "Choose a route above.";
+    html += "Select route + time.";
     document.getElementById("output").innerHTML = html;
     return;
   }
 
   // ROUTES
-  if (h === "#KX-NCL") html += "<b>KX → NCL</b><br><br>" + buildTrains();
-  else if (h === "#NCL-KX") html += "<b>NCL → KX</b><br><br>" + buildTrains();
-  else if (h === "#STP-NCL") html += "<b>STP → NCL</b><br><br>" + buildTrains();
-  else if (h === "#NCL-STP") html += "<b>NCL → STP</b><br><br>" + buildTrains();
+  if (h === "#KX-NCL") route = "Kings Cross → Newcastle";
+  if (h === "#NCL-KX") route = "Newcastle → Kings Cross";
+  if (h === "#STP-NCL") route = "St Pancras → Newcastle";
+  if (h === "#NCL-STP") route = "Newcastle → St Pancras";
 
-  // TIME MODES (visual only for now)
-  else if (h === "#now") html += "<b>Time: Now</b>";
-  else if (h === "#m60") html += "<b>Time: -1 Hour</b>";
-  else if (h === "#p60") html += "<b>Time: +1 Hour</b>";
-  else html += "Unknown: " + h;
+  // TIME SETTING (DEFAULT = NOW)
+  if (h === "#now") selectedTime = new Date();
+  if (h === "#t-30") selectedTime = new Date(Date.now() - 30 * 60000);
+  if (h === "#t0") selectedTime = new Date();
+  if (h === "#t+30") selectedTime = new Date(Date.now() + 30 * 60000);
+  if (h === "#t+60") selectedTime = new Date(Date.now() + 60 * 60000);
+
+  // OUTPUT
+  html += "<b>Route:</b> " + (route || "Not selected") + "<br>";
+
+  html += "<b>Date:</b> " + selectedTime.toDateString() + "<br>";
+  html += "<b>Time:</b> " + formatTime(selectedTime) + "<br><hr>";
+
+  html += buildTrains();
 
   document.getElementById("output").innerHTML = html;
 }
 
-// 🚆 REAL NEXT-TRAINS STYLE ENGINE
+// TRAIN ENGINE (REALISTIC 3 TRAIN MATCH)
 function buildTrains() {
-  var now = new Date();
-  var base = now.getHours() * 60 + now.getMinutes();
+  var base = selectedTime.getHours() * 60 + selectedTime.getMinutes();
 
   var out = "";
 
-  for (var i = -2; i <= 2; i++) {
-    var t = base + (i * 20); // every 20 min spacing
-
-    out += "🚆 " + label(i) + " - " + format(t) + "<br>";
-  }
+  out += "🚆 Before - " + formatMinutes(base - 25) + "<br>";
+  out += "🚆 ⭐ Closest - " + formatMinutes(base) + "<br>";
+  out += "🚆 After - " + formatMinutes(base + 25) + "<br>";
 
   return out;
 }
 
-function label(i) {
-  if (i === 0) return "⭐ Next";
-  if (i < 0) return "Before";
-  return "After";
+// FORMAT TIME
+function formatTime(d) {
+  var h = d.getHours();
+  var m = d.getMinutes();
+
+  if (h < 10) h = "0" + h;
+  if (m < 10) m = "0" + m;
+
+  return h + ":" + m;
 }
 
-function format(mins) {
+// FORMAT MINUTES
+function formatMinutes(mins) {
   mins = mins % 1440;
   if (mins < 0) mins += 1440;
 
