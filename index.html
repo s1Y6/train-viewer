@@ -1,7 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Train Viewer v7.3</title>
+</head>
+
+<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
+
+<!-- HEADER -->
+<div style="border-bottom:1px solid lime;padding-bottom:5px;">
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.3</h2>
+  <p style="margin:0;color:yellow;">Stable clickable trains</p>
+</div>
+
+<hr>
+
+<!-- ROUTE -->
+<p><b>Route</b></p>
+
+<select id="route" style="background:white;color:black;">
+
+  <option value="KX-NCL">King's X → Newcastle</option>
+  <option value="NCL-KX">Newcastle → King's X</option>
+  <option value="STP-NCL">St. Pancras → Newcastle</option>
+  <option value="NCL-STP">Newcastle → St. Pancras</option>
+
+</select>
+
+<p><b>Date</b></p>
+
+<input type="date"
+       id="date"
+       style="background:white;color:black;border:1px solid lime;">
+
+<p><b>Time</b></p>
+
+<input type="time"
+       id="time"
+       style="background:white;color:black;border:1px solid lime;">
+
+<br><br>
+
+<button onclick="run()" style="background:lime;color:black;">
+  Search Trains
+</button>
+
+<hr>
+
+<div id="output">Enter details and press search</div>
+
 <script>
 
 var selectedTime = 0;
-var selectedRoute = "";
 var selectedDate = "";
 
 // INIT
@@ -26,10 +76,10 @@ function formatDate(input) {
 // MAIN RUN
 function run() {
 
-  selectedRoute = document.getElementById("route").value;
-  selectedDate = document.getElementById("date").value;
-
   var time = document.getElementById("time").value;
+  if (!time) time = "12:00";
+
+  selectedDate = document.getElementById("date").value;
 
   var parts = time.split(":");
   selectedTime = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
@@ -44,21 +94,28 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAIN LIST (CLICKABLE)
+// BUILD TRAIN LIST
 function buildTrains() {
+
+  var before = selectedTime - 25;
+  var closest = selectedTime;
+  var after = selectedTime + 25;
 
   var out = "";
 
-  out += "<div onclick='showTrain(" + (selectedTime - 25) + ")'>🚆 Before - " + format(selectedTime - 25) + "</div><br>";
+  out += "🚆 Before - " + format(before) + " ";
+  out += "<button onclick='showTrain(" + before + ")'>View</button><br><br>";
 
-  out += "<div onclick='showTrain(" + selectedTime + ")'><b>🚆 ⭐ Closest - " + format(selectedTime) + "</b></div><br>";
+  out += "🚆 ⭐ Closest - " + format(closest) + " ";
+  out += "<button onclick='showTrain(" + closest + ")'>View</button><br><br>";
 
-  out += "<div onclick='showTrain(" + (selectedTime + 25) + ")'>🚆 After - " + format(selectedTime + 25) + "</div>";
+  out += "🚆 After - " + format(after) + " ";
+  out += "<button onclick='showTrain(" + after + ")'>View</button>";
 
   return out;
 }
 
-// SHOW TRAIN DETAILS (STAGE 4)
+// SHOW TRAIN DETAILS
 function showTrain(mins) {
 
   var operator = pickOperator(mins);
@@ -66,7 +123,7 @@ function showTrain(mins) {
   var delay = mins % 7;
 
   var depart = format(mins);
-  var arrive = format(mins + 155); // ~2h35
+  var arrive = format(mins + 155);
 
   var html = "<b>Train Viewer v7.3</b><br><br>";
 
@@ -88,7 +145,7 @@ function showTrain(mins) {
   document.getElementById("output").innerHTML = html;
 }
 
-// SIMPLE OPERATOR ROTATION
+// OPERATOR ROTATION
 function pickOperator(mins) {
 
   var r = mins % 3;
@@ -116,3 +173,6 @@ function format(mins) {
 window.onload = init;
 
 </script>
+
+</body>
+</html>
