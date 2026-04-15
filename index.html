@@ -2,20 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v7.3</title>
+  <title>Train Viewer v7.4</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.3</h2>
-  <p style="margin:0;color:yellow;">Stable clickable trains</p>
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.4</h2>
+  <p style="margin:0;color:yellow;">Button visibility fix</p>
 </div>
 
 <hr>
 
-<!-- ROUTE -->
 <p><b>Route</b></p>
 
 <select id="route" style="background:white;color:black;">
@@ -65,7 +64,7 @@ function init() {
     now.toTimeString().slice(0,5);
 }
 
-// FORMAT DATE → DD-MM-YYYY
+// FORMAT DATE
 function formatDate(input) {
   if (!input) return "Not set";
 
@@ -73,7 +72,7 @@ function formatDate(input) {
   return parts[2] + "-" + parts[1] + "-" + parts[0];
 }
 
-// MAIN RUN
+// MAIN
 function run() {
 
   var time = document.getElementById("time").value;
@@ -84,7 +83,7 @@ function run() {
   var parts = time.split(":");
   selectedTime = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
-  var html = "<b>Train Viewer v7.3</b><br><br>";
+  var html = "<b>Train Viewer v7.4</b><br><br>";
 
   html += "<b>Date:</b> " + formatDate(selectedDate) + "<br>";
   html += "<b>Time:</b> " + time + "<br><hr>";
@@ -94,7 +93,7 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAIN LIST
+// BUILD TRAINS (TEXT INSIDE BUTTON)
 function buildTrains() {
 
   var before = selectedTime - 25;
@@ -103,19 +102,16 @@ function buildTrains() {
 
   var out = "";
 
-  out += "🚆 Before - " + format(before) + " ";
-  out += "<button onclick='showTrain(" + before + ")'>View</button><br><br>";
+  out += "<button style='color:black;background:white;' onclick='showTrain(" + before + ")'>🚆 Before - " + format(before) + "</button><br><br>";
 
-  out += "🚆 ⭐ Closest - " + format(closest) + " ";
-  out += "<button onclick='showTrain(" + closest + ")'>View</button><br><br>";
+  out += "<button style='color:black;background:white;' onclick='showTrain(" + closest + ")'>🚆 ⭐ Closest - " + format(closest) + "</button><br><br>";
 
-  out += "🚆 After - " + format(after) + " ";
-  out += "<button onclick='showTrain(" + after + ")'>View</button>";
+  out += "<button style='color:black;background:white;' onclick='showTrain(" + after + ")'>🚆 After - " + format(after) + "</button>";
 
   return out;
 }
 
-// SHOW TRAIN DETAILS
+// DETAILS
 function showTrain(mins) {
 
   var operator = pickOperator(mins);
@@ -125,10 +121,9 @@ function showTrain(mins) {
   var depart = format(mins);
   var arrive = format(mins + 155);
 
-  var html = "<b>Train Viewer v7.3</b><br><br>";
+  var html = "<b>Train Viewer v7.4</b><br><br>";
 
   html += "<b>Operator:</b> " + operator + "<br><br>";
-
   html += "<b>PLATFORM: " + platform + "</b><br><br>";
 
   if (delay === 0) {
@@ -145,9 +140,8 @@ function showTrain(mins) {
   document.getElementById("output").innerHTML = html;
 }
 
-// OPERATOR ROTATION
+// OPERATOR
 function pickOperator(mins) {
-
   var r = mins % 3;
 
   if (r === 0) return "LNER";
