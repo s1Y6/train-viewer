@@ -1,10 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Train Viewer</title>
 </head>
-<body style="background:black;color:lime;font-family:monospace;">
-  <h2>Train Viewer Loaded ✔</h2>
-  <p>If you can see this, GitHub Pages works.</p>
+
+<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
+
+<h2>🚆 Train Viewer</h2>
+
+<div>
+  <p id="recent">Recent: loading...</p>
+</div>
+
+<hr>
+
+<!-- ROUTES -->
+<button onclick="setRoute('KX-NCL')">KX → NCL</button>
+<button onclick="setRoute('NCL-KX')">NCL → KX</button>
+<button onclick="setRoute('STP-NCL')">STP → NCL</button>
+<button onclick="setRoute('NCL-STP')">NCL → STP</button>
+
+<hr>
+
+<!-- TIME CONTROLS -->
+<p>Time:</p>
+<button onclick="shiftTime(-60)">-1h</button>
+<button onclick="shiftTime(0)">Now</button>
+<button onclick="shiftTime(60)">+1h</button>
+
+<hr>
+
+<!-- RESULTS -->
+<p id="results">Select a route</p>
+
+<script>
+let route = "";
+let baseTime = new Date();
+
+function updateRecent() {
+  const r = localStorage.getItem("recentTrip");
+  document.getElementById("recent").innerText =
+    "Recent: " + (r ? r : "None");
+}
+
+function setRoute(r) {
+  route = r;
+  runSearch();
+}
+
+function shiftTime(mins) {
+  baseTime = new Date();
+  baseTime.setMinutes(baseTime.getMinutes() + mins);
+  runSearch();
+}
+
+function runSearch() {
+  if (!route) return;
+
+  const timeStr = baseTime.getHours() + ":" + String(baseTime.getMinutes()).padStart(2,"0");
+
+  const summary = route + "@" + timeStr;
+  localStorage.setItem("recentTrip", summary);
+  updateRecent();
+
+  // fake trains (we replace with real API later)
+  const output =
+    "Route: " + route + "<br>" +
+    "Selected time: " + timeStr + "<br><br>" +
+    "🚆 Train A (before)<br>" +
+    "🚆 ⭐ Train B (closest)<br>" +
+    "🚆 Train C (after)<br>";
+
+  document.getElementById("results").innerHTML = output;
+}
+
+updateRecent();
+</script>
+
 </body>
 </html>
