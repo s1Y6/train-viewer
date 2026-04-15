@@ -2,17 +2,16 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v3</title>
+  <title>Train Viewer v4</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v3</h2>
-<p style="color:yellow;">Improved timing engine (Nokia safe)</p>
+<h2>🚆 Train Viewer v4</h2>
+<p style="color:yellow;">Next-train logic upgrade</p>
 
 <hr>
 
-<!-- ROUTES -->
 <p><b>Routes</b></p>
 <a href="#KX-NCL">KX → NCL</a><br>
 <a href="#NCL-KX">NCL → KX</a><br>
@@ -35,9 +34,8 @@
 function render() {
   var h = window.location.hash;
 
-  var html = "<b>Train Viewer v3</b><br><br>";
+  var html = "<b>Train Viewer v4</b><br><br>";
 
-  // DEFAULT
   if (!h || h === "#") {
     html += "Choose a route above.";
     document.getElementById("output").innerHTML = html;
@@ -45,61 +43,43 @@ function render() {
   }
 
   // ROUTES
-  if (h === "#KX-NCL") {
-    html += "<b>KX → NCL</b><br><br>";
-    html += buildTrains("Kings Cross", "Newcastle");
-  }
+  if (h === "#KX-NCL") html += "<b>KX → NCL</b><br><br>" + buildTrains();
+  else if (h === "#NCL-KX") html += "<b>NCL → KX</b><br><br>" + buildTrains();
+  else if (h === "#STP-NCL") html += "<b>STP → NCL</b><br><br>" + buildTrains();
+  else if (h === "#NCL-STP") html += "<b>NCL → STP</b><br><br>" + buildTrains();
 
-  else if (h === "#NCL-KX") {
-    html += "<b>NCL → KX</b><br><br>";
-    html += buildTrains("Newcastle", "Kings Cross");
-  }
-
-  else if (h === "#STP-NCL") {
-    html += "<b>STP → NCL</b><br><br>";
-    html += buildTrains("St Pancras", "Newcastle");
-  }
-
-  else if (h === "#NCL-STP") {
-    html += "<b>NCL → STP</b><br><br>";
-    html += buildTrains("Newcastle", "St Pancras");
-  }
-
-  // TIME MODES
-  else if (h === "#now") {
-    html += "<b>Time: Now</b>";
-  }
-  else if (h === "#m60") {
-    html += "<b>Time: -1 Hour</b>";
-  }
-  else if (h === "#p60") {
-    html += "<b>Time: +1 Hour</b>";
-  }
-
-  else {
-    html += "Unknown selection: " + h;
-  }
+  // TIME MODES (visual only for now)
+  else if (h === "#now") html += "<b>Time: Now</b>";
+  else if (h === "#m60") html += "<b>Time: -1 Hour</b>";
+  else if (h === "#p60") html += "<b>Time: +1 Hour</b>";
+  else html += "Unknown: " + h;
 
   document.getElementById("output").innerHTML = html;
 }
 
-// SIMPLE TRAIN ENGINE (REAL TIME BASED)
-function buildTrains(from, to) {
+// 🚆 REAL NEXT-TRAINS STYLE ENGINE
+function buildTrains() {
   var now = new Date();
-
   var base = now.getHours() * 60 + now.getMinutes();
 
-  var t1 = formatTime(base - 30);
-  var t2 = formatTime(base);
-  var t3 = formatTime(base + 30);
+  var out = "";
 
-  return ""
-    + "🚆 Before - " + t1 + "<br>"
-    + "🚆 ⭐ Closest - " + t2 + "<br>"
-    + "🚆 After - " + t3 + "<br>";
+  for (var i = -2; i <= 2; i++) {
+    var t = base + (i * 20); // every 20 min spacing
+
+    out += "🚆 " + label(i) + " - " + format(t) + "<br>";
+  }
+
+  return out;
 }
 
-function formatTime(mins) {
+function label(i) {
+  if (i === 0) return "⭐ Next";
+  if (i < 0) return "Before";
+  return "After";
+}
+
+function format(mins) {
   mins = mins % 1440;
   if (mins < 0) mins += 1440;
 
