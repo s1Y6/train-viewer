@@ -2,34 +2,39 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v7.1</title>
+  <title>Train Viewer v7.2</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<!-- HEADER FIXED (FORCES VISIBILITY ON NOKIA) -->
+<!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.1</h2>
-  <p style="margin:0;color:yellow;">Fixed input visibility + Nokia header stability</p>
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.2</h2>
+  <p style="margin:0;color:yellow;">Station labels + DD-MM-YYYY format</p>
 </div>
 
 <hr>
 
-<!-- REAL INPUTS -->
+<!-- ROUTE -->
 <p><b>Route</b></p>
+
 <select id="route" style="background:white;color:black;">
-  <option value="KX-NCL">KX → NCL</option>
-  <option value="NCL-KX">NCL → KX</option>
-  <option value="STP-NCL">STP → NCL</option>
-  <option value="NCL-STP">NCL → STP</option>
+
+  <option value="KX-NCL">KX – Kings Cross → NCL – Newcastle</option>
+  <option value="NCL-KX">NCL – Newcastle → KX – Kings Cross</option>
+  <option value="STP-NCL">STP – St Pancras → NCL – Newcastle</option>
+  <option value="NCL-STP">NCL – Newcastle → STP – St Pancras</option>
+
 </select>
 
 <p><b>Date</b></p>
+
 <input type="date"
        id="date"
        style="background:white;color:black;border:1px solid lime;">
 
 <p><b>Time</b></p>
+
 <input type="time"
        id="time"
        style="background:white;color:black;border:1px solid lime;">
@@ -56,15 +61,22 @@ function init() {
     now.toTimeString().slice(0,5);
 }
 
+// FORMAT DATE → DD-MM-YYYY
+function formatDate(input) {
+  var parts = input.split("-");
+  return parts[2] + "-" + parts[1] + "-" + parts[0];
+}
+
 function run() {
+
   var route = document.getElementById("route").value;
-  var date = document.getElementById("date").value;
+  var dateRaw = document.getElementById("date").value;
   var time = document.getElementById("time").value;
 
-  var html = "<b>Train Viewer v7.1</b><br><br>";
+  var html = "<b>Train Viewer v7.2</b><br><br>";
 
   html += "<b>Route:</b> " + route + "<br>";
-  html += "<b>Date:</b> " + date + "<br>";
+  html += "<b>Date:</b> " + formatDate(dateRaw) + "<br>";
   html += "<b>Time:</b> " + time + "<br><hr>";
 
   html += buildTrains(time);
@@ -73,6 +85,7 @@ function run() {
 }
 
 function buildTrains(timeStr) {
+
   var parts = timeStr.split(":");
   var base = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
@@ -86,6 +99,7 @@ function buildTrains(timeStr) {
 }
 
 function format(mins) {
+
   mins = mins % 1440;
   if (mins < 0) mins += 1440;
 
