@@ -2,15 +2,15 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v7.4</title>
+  <title>Train Viewer v7.5</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.4</h2>
-  <p style="margin:0;color:yellow;">Button visibility fix</p>
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.5</h2>
+  <p style="margin:0;color:yellow;">Stable UI + visible buttons</p>
 </div>
 
 <hr>
@@ -18,25 +18,21 @@
 <p><b>Route</b></p>
 
 <select id="route" style="background:white;color:black;">
-
   <option value="KX-NCL">King's X → Newcastle</option>
   <option value="NCL-KX">Newcastle → King's X</option>
   <option value="STP-NCL">St. Pancras → Newcastle</option>
   <option value="NCL-STP">Newcastle → St. Pancras</option>
-
 </select>
 
 <p><b>Date</b></p>
 
-<input type="date"
-       id="date"
-       style="background:white;color:black;border:1px solid lime;">
+<input type="date" id="date"
+style="background:white;color:black;border:1px solid lime;">
 
 <p><b>Time</b></p>
 
-<input type="time"
-       id="time"
-       style="background:white;color:black;border:1px solid lime;">
+<input type="time" id="time"
+style="background:white;color:black;border:1px solid lime;">
 
 <br><br>
 
@@ -46,7 +42,11 @@
 
 <hr>
 
-<div id="output">Enter details and press search</div>
+<!-- DEFAULT OUTPUT (VERSION ALWAYS VISIBLE) -->
+<div id="output">
+<b>Train Viewer v7.5</b><br><br>
+Enter details and press search
+</div>
 
 <script>
 
@@ -83,7 +83,7 @@ function run() {
   var parts = time.split(":");
   selectedTime = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
 
-  var html = "<b>Train Viewer v7.4</b><br><br>";
+  var html = "<b>Train Viewer v7.5</b><br><br>";
 
   html += "<b>Date:</b> " + formatDate(selectedDate) + "<br>";
   html += "<b>Time:</b> " + time + "<br><hr>";
@@ -93,7 +93,7 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAINS (TEXT INSIDE BUTTON)
+// BUILD TRAINS (DARK BUTTONS)
 function buildTrains() {
 
   var before = selectedTime - 25;
@@ -102,11 +102,11 @@ function buildTrains() {
 
   var out = "";
 
-  out += "<button style='color:black;background:white;' onclick='showTrain(" + before + ")'>🚆 Before - " + format(before) + "</button><br><br>";
+  out += "<button style='background:black;color:lime;border:1px solid lime;' onclick='showTrain(" + before + ")'>🚆 Before - " + format(before) + "</button><br><br>";
 
-  out += "<button style='color:black;background:white;' onclick='showTrain(" + closest + ")'>🚆 ⭐ Closest - " + format(closest) + "</button><br><br>";
+  out += "<button style='background:black;color:yellow;border:1px solid lime;' onclick='showTrain(" + closest + ")'>🚆 ⭐ Closest - " + format(closest) + "</button><br><br>";
 
-  out += "<button style='color:black;background:white;' onclick='showTrain(" + after + ")'>🚆 After - " + format(after) + "</button>";
+  out += "<button style='background:black;color:lime;border:1px solid lime;' onclick='showTrain(" + after + ")'>🚆 After - " + format(after) + "</button>";
 
   return out;
 }
@@ -121,7 +121,7 @@ function showTrain(mins) {
   var depart = format(mins);
   var arrive = format(mins + 155);
 
-  var html = "<b>Train Viewer v7.4</b><br><br>";
+  var html = "<b>Train Viewer v7.5</b><br><br>";
 
   html += "<b>Operator:</b> " + operator + "<br><br>";
   html += "<b>PLATFORM: " + platform + "</b><br><br>";
@@ -135,7 +135,7 @@ function showTrain(mins) {
   html += "Depart: " + depart + "<br>";
   html += "Arrive: " + arrive + "<br><br>";
 
-  html += "<button onclick='run()'>← Back</button>";
+  html += "<button style='background:black;color:lime;border:1px solid lime;' onclick='run()'>← Back</button>";
 
   document.getElementById("output").innerHTML = html;
 }
