@@ -13,19 +13,18 @@
 
 <hr>
 
-<!-- ROUTES -->
-<button onclick="setRoute('KX-NCL')">KX → NCL</button>
-<button onclick="setRoute('NCL-KX')">NCL → KX</button>
-<button onclick="setRoute('STP-NCL')">STP → NCL</button>
-<button onclick="setRoute('NCL-STP')">NCL → STP</button>
+<!-- ROUTES (HASH LINKS - SAFE FOR OPERA MINI) -->
+<a href="#KX-NCL">KX → NCL</a><br>
+<a href="#NCL-KX">NCL → KX</a><br>
+<a href="#STP-NCL">STP → NCL</a><br>
+<a href="#NCL-STP">NCL → STP</a><br>
 
 <hr>
 
-<!-- TIME -->
-<p>Time Control</p>
-<button onclick="setNow()">Now</button>
-<button onclick="shift(-60)">-1h</button>
-<button onclick="shift(60)">+1h</button>
+Time Control<br>
+<a href="#now">Now</a>
+<a href="#m60">-1h</a>
+<a href="#p60">+1h</a>
 
 <hr>
 
@@ -36,15 +35,12 @@
 let route = "";
 let baseTime = new Date();
 
-// SAFE recent loader
 function loadRecent() {
   const r = localStorage.getItem("recentTrip");
-
   document.getElementById("recent").innerText =
     "Recent: " + (r ? r : "None");
 }
 
-// CENTRAL RENDER (always runs UI)
 function render() {
   if (!route) {
     loadRecent();
@@ -71,25 +67,38 @@ function render() {
   document.getElementById("output").innerHTML = html;
 }
 
-// ROUTE SELECT
-function setRoute(r) {
-  route = r;
-  render();
+// SAFE HASH ROUTING (NO BUTTON EVENTS)
+function handleHash() {
+  const h = location.hash.replace("#", "");
+
+  if (!h) return;
+
+  // ROUTES
+  if (h === "KX-NCL" || h === "NCL-KX" || h === "STP-NCL" || h === "NCL-STP") {
+    route = h;
+    render();
+  }
+
+  // TIME CONTROL
+  if (h === "now") {
+    baseTime = new Date();
+    render();
+  }
+
+  if (h === "m60") {
+    baseTime = new Date();
+    baseTime.setMinutes(baseTime.getMinutes() - 60);
+    render();
+  }
+
+  if (h === "p60") {
+    baseTime = new Date();
+    baseTime.setMinutes(baseTime.getMinutes() + 60);
+    render();
+  }
 }
 
-// TIME CONTROL
-function setNow() {
-  baseTime = new Date();
-  render();
-}
-
-function shift(mins) {
-  baseTime = new Date();
-  baseTime.setMinutes(baseTime.getMinutes() + mins);
-  render();
-}
-
-// TRAIN ENGINE
+// TRAIN GENERATOR
 function generateTrains(base) {
   let trains = [];
 
@@ -109,10 +118,15 @@ function generateTrains(base) {
   return trains;
 }
 
-// INIT (IMPORTANT FIX)
+// INIT
 window.onload = function() {
   loadRecent();
-  render();
+  handleHash();
+};
+
+// LISTEN FOR HASH CHANGES
+window.onhashchange = function() {
+  handleHash();
 };
 
 </script>
