@@ -2,18 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v2</title>
+  <title>Train Viewer v3</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v2</h2>
-<p style="color:yellow;">Stable hash version (Nokia compatible)</p>
+<h2>🚆 Train Viewer v3</h2>
+<p style="color:yellow;">Improved timing engine (Nokia safe)</p>
 
 <hr>
 
-<!-- NAV LINKS -->
-<p>Routes:</p>
+<!-- ROUTES -->
+<p><b>Routes</b></p>
 <a href="#KX-NCL">KX → NCL</a><br>
 <a href="#NCL-KX">NCL → KX</a><br>
 <a href="#STP-NCL">STP → NCL</a><br>
@@ -21,76 +21,99 @@
 
 <hr>
 
-<p>Time:</p>
+<p><b>Time</b></p>
 <a href="#now">Now</a>
 <a href="#m60">-1h</a>
 <a href="#p60">+1h</a>
 
 <hr>
 
-<div id="output">Loading...</div>
+<div id="output">Select a route</div>
 
 <script>
 
 function render() {
   var h = window.location.hash;
 
-  var out = "";
+  var html = "<b>Train Viewer v3</b><br><br>";
 
-  // HEADER ALWAYS
-  out += "<b>Train Viewer v2</b><br><br>";
-
+  // DEFAULT
   if (!h || h === "#") {
-    out += "Select a route.";
-    document.getElementById("output").innerHTML = out;
+    html += "Choose a route above.";
+    document.getElementById("output").innerHTML = html;
     return;
   }
 
   // ROUTES
   if (h === "#KX-NCL") {
-    out += "<b>KX → NCL</b><br><br>";
-    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
+    html += "<b>KX → NCL</b><br><br>";
+    html += buildTrains("Kings Cross", "Newcastle");
   }
+
   else if (h === "#NCL-KX") {
-    out += "<b>NCL → KX</b><br><br>";
-    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
+    html += "<b>NCL → KX</b><br><br>";
+    html += buildTrains("Newcastle", "Kings Cross");
   }
+
   else if (h === "#STP-NCL") {
-    out += "<b>STP → NCL</b><br><br>";
-    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
+    html += "<b>STP → NCL</b><br><br>";
+    html += buildTrains("St Pancras", "Newcastle");
   }
+
   else if (h === "#NCL-STP") {
-    out += "<b>NCL → STP</b><br><br>";
-    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
+    html += "<b>NCL → STP</b><br><br>";
+    html += buildTrains("Newcastle", "St Pancras");
   }
 
   // TIME MODES
   else if (h === "#now") {
-    out += "<b>Time: Now</b>";
+    html += "<b>Time: Now</b>";
   }
   else if (h === "#m60") {
-    out += "<b>Time: -1 Hour</b>";
+    html += "<b>Time: -1 Hour</b>";
   }
   else if (h === "#p60") {
-    out += "<b>Time: +1 Hour</b>";
+    html += "<b>Time: +1 Hour</b>";
   }
 
   else {
-    out += "Unknown selection: " + h;
+    html += "Unknown selection: " + h;
   }
 
-  document.getElementById("output").innerHTML = out;
+  document.getElementById("output").innerHTML = html;
 }
 
-// RUN ON LOAD
-window.onload = function() {
-  render();
-};
+// SIMPLE TRAIN ENGINE (REAL TIME BASED)
+function buildTrains(from, to) {
+  var now = new Date();
 
-// RUN ON HASH CHANGE
-window.onhashchange = function() {
-  render();
-};
+  var base = now.getHours() * 60 + now.getMinutes();
+
+  var t1 = formatTime(base - 30);
+  var t2 = formatTime(base);
+  var t3 = formatTime(base + 30);
+
+  return ""
+    + "🚆 Before - " + t1 + "<br>"
+    + "🚆 ⭐ Closest - " + t2 + "<br>"
+    + "🚆 After - " + t3 + "<br>";
+}
+
+function formatTime(mins) {
+  mins = mins % 1440;
+  if (mins < 0) mins += 1440;
+
+  var h = Math.floor(mins / 60);
+  var m = mins % 60;
+
+  if (h < 10) h = "0" + h;
+  if (m < 10) m = "0" + m;
+
+  return h + ":" + m;
+}
+
+window.onload = render;
+window.onhashchange = render;
 
 </script>
 
