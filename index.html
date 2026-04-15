@@ -13,19 +13,18 @@
 
 <hr>
 
-<!-- ROUTES -->
-<button onclick="setRoute('KX-NCL')">KX → NCL</button>
-<button onclick="setRoute('NCL-KX')">NCL → KX</button>
-<button onclick="setRoute('STP-NCL')">STP → NCL</button>
-<button onclick="setRoute('NCL-STP')">NCL → STP</button>
+<!-- ROUTES (NO JS EVENTS - ONLY HASH LINKS) -->
+<a href="#KX-NCL">KX → NCL</a><br>
+<a href="#NCL-KX">NCL → KX</a><br>
+<a href="#STP-NCL">STP → NCL</a><br>
+<a href="#NCL-STP">NCL → STP</a><br>
 
 <hr>
 
-<!-- TIME -->
-<p>Time Control</p>
-<button onclick="setNow()">Now</button>
-<button onclick="shift(-60)">-1h</button>
-<button onclick="shift(60)">+1h</button>
+Time Control<br>
+<a href="#now">Now</a>
+<a href="#m60">-1h</a>
+<a href="#p60">+1h</a>
 
 <hr>
 
@@ -42,35 +41,8 @@ function loadRecent() {
     "Recent: " + (r ? r : "None");
 }
 
-// 🔥 ROUTE CLICK (VISIBLE CONFIRMATION ADDED)
-function setRoute(r) {
-  route = r;
-
-  document.getElementById("output").innerHTML =
-    "<b>ROUTE CLICKED ✔</b><br>" +
-    "Selected: " + r + "<hr>";
-
-  render();
-}
-
-// TIME CONTROLS
-function setNow() {
-  baseTime = new Date();
-  render();
-}
-
-function shift(mins) {
-  baseTime = new Date();
-  baseTime.setMinutes(baseTime.getMinutes() + mins);
-  render();
-}
-
-// MAIN RENDER
 function render() {
-  if (!route) {
-    loadRecent();
-    return;
-  }
+  if (!route) return;
 
   const trains = generateTrains(baseTime);
 
@@ -90,6 +62,35 @@ function render() {
   }
 
   document.getElementById("output").innerHTML = html;
+}
+
+// READ URL CHANGES (THIS IS THE KEY FIX)
+function handleHash() {
+  const h = location.hash.replace("#", "");
+
+  if (!h) return;
+
+  if (h === "KX-NCL" || h === "NCL-KX" || h === "STP-NCL" || h === "NCL-STP") {
+    route = h;
+    render();
+  }
+
+  if (h === "now") {
+    baseTime = new Date();
+    render();
+  }
+
+  if (h === "m60") {
+    baseTime = new Date();
+    baseTime.setMinutes(baseTime.getMinutes() - 60);
+    render();
+  }
+
+  if (h === "p60") {
+    baseTime = new Date();
+    baseTime.setMinutes(baseTime.getMinutes() + 60);
+    render();
+  }
 }
 
 // TRAIN GENERATOR
@@ -115,6 +116,12 @@ function generateTrains(base) {
 // INIT
 window.onload = function() {
   loadRecent();
+  handleHash();
+};
+
+// LISTEN FOR NAVIGATION CHANGES
+window.onhashchange = function() {
+  handleHash();
 };
 
 </script>
