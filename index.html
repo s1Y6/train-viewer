@@ -2,129 +2,63 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer</title>
+  <title>Train Viewer v1 STATIC</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer</h2>
-
-<p id="recent">Recent: loading...</p>
+<h2>🚆 Train Viewer v1 (STATIC MODE)</h2>
 
 <hr>
 
-<!-- ROUTES (NO JS EVENTS - ONLY HASH LINKS) -->
-<a href="#KX-NCL">KX → NCL</a><br>
-<a href="#NCL-KX">NCL → KX</a><br>
-<a href="#STP-NCL">STP → NCL</a><br>
-<a href="#NCL-STP">NCL → STP</a><br>
+<!-- NAVIGATION -->
+<p>Routes:</p>
+<a href="index.html#KX-NCL">KX → NCL</a><br>
+<a href="index.html#NCL-KX">NCL → KX</a><br>
+<a href="index.html#STP-NCL">STP → NCL</a><br>
+<a href="index.html#NCL-STP">NCL → STP</a><br>
 
 <hr>
 
-Time Control<br>
-<a href="#now">Now</a>
-<a href="#m60">-1h</a>
-<a href="#p60">+1h</a>
+<p>Time:</p>
+<a href="index.html#now">Now</a>
+<a href="index.html#m60">-1h</a>
+<a href="index.html#p60">+1h</a>
 
 <hr>
 
-<div id="output">Select route</div>
+<!-- STATIC OUTPUT AREA -->
+<div style="border:1px solid lime;padding:5px;">
 
 <script>
+  var h = window.location.hash;
 
-let route = "";
-let baseTime = new Date();
-
-function loadRecent() {
-  const r = localStorage.getItem("recentTrip");
-  document.getElementById("recent").innerText =
-    "Recent: " + (r ? r : "None");
-}
-
-function render() {
-  if (!route) return;
-
-  const trains = generateTrains(baseTime);
-
-  const timeStr =
-    baseTime.getHours() + ":" +
-    String(baseTime.getMinutes()).padStart(2, "0");
-
-  localStorage.setItem("recentTrip", route + " @ " + timeStr);
-
-  loadRecent();
-
-  let html = "<h3>Route: " + route + "</h3>";
-  html += "<p>Selected: " + timeStr + "</p><hr>";
-
-  for (let i = 0; i < trains.length; i++) {
-    html += "🚆 " + trains[i].label + " - " + trains[i].time + "<br>";
+  if (!h) {
+    document.write("Select a route above.");
   }
 
-  document.getElementById("output").innerHTML = html;
-}
-
-// READ URL CHANGES (THIS IS THE KEY FIX)
-function handleHash() {
-  const h = location.hash.replace("#", "");
-
-  if (!h) return;
-
-  if (h === "KX-NCL" || h === "NCL-KX" || h === "STP-NCL" || h === "NCL-STP") {
-    route = h;
-    render();
+  else if (h === "#KX-NCL") {
+    document.write("<b>KX → NCL</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
   }
 
-  if (h === "now") {
-    baseTime = new Date();
-    render();
+  else if (h === "#NCL-KX") {
+    document.write("<b>NCL → KX</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
   }
 
-  if (h === "m60") {
-    baseTime = new Date();
-    baseTime.setMinutes(baseTime.getMinutes() - 60);
-    render();
+  else if (h === "#STP-NCL") {
+    document.write("<b>STP → NCL</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
   }
 
-  if (h === "p60") {
-    baseTime = new Date();
-    baseTime.setMinutes(baseTime.getMinutes() + 60);
-    render();
-  }
-}
-
-// TRAIN GENERATOR
-function generateTrains(base) {
-  let trains = [];
-
-  for (let i = -1; i <= 1; i++) {
-    let t = new Date(base);
-    t.setMinutes(t.getMinutes() + i * 30);
-
-    let h = t.getHours();
-    let m = String(t.getMinutes()).padStart(2, "0");
-
-    trains.push({
-      time: h + ":" + m,
-      label: i === 0 ? "⭐ Closest" : (i < 0 ? "Before" : "After")
-    });
+  else if (h === "#NCL-STP") {
+    document.write("<b>NCL → STP</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
   }
 
-  return trains;
-}
-
-// INIT
-window.onload = function() {
-  loadRecent();
-  handleHash();
-};
-
-// LISTEN FOR NAVIGATION CHANGES
-window.onhashchange = function() {
-  handleHash();
-};
-
+  else {
+    document.write("<b>Time Mode:</b> " + h.replace("#",""));
+  }
 </script>
+
+</div>
 
 </body>
 </html>
