@@ -2,63 +2,97 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v1 STATIC</title>
+  <title>Train Viewer v2</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<h2>🚆 Train Viewer v1 (STATIC MODE)</h2>
+<h2>🚆 Train Viewer v2</h2>
+<p style="color:yellow;">Stable hash version (Nokia compatible)</p>
 
 <hr>
 
-<!-- NAVIGATION -->
+<!-- NAV LINKS -->
 <p>Routes:</p>
-<a href="index.html#KX-NCL">KX → NCL</a><br>
-<a href="index.html#NCL-KX">NCL → KX</a><br>
-<a href="index.html#STP-NCL">STP → NCL</a><br>
-<a href="index.html#NCL-STP">NCL → STP</a><br>
+<a href="#KX-NCL">KX → NCL</a><br>
+<a href="#NCL-KX">NCL → KX</a><br>
+<a href="#STP-NCL">STP → NCL</a><br>
+<a href="#NCL-STP">NCL → STP</a><br>
 
 <hr>
 
 <p>Time:</p>
-<a href="index.html#now">Now</a>
-<a href="index.html#m60">-1h</a>
-<a href="index.html#p60">+1h</a>
+<a href="#now">Now</a>
+<a href="#m60">-1h</a>
+<a href="#p60">+1h</a>
 
 <hr>
 
-<!-- STATIC OUTPUT AREA -->
-<div style="border:1px solid lime;padding:5px;">
+<div id="output">Loading...</div>
 
 <script>
+
+function render() {
   var h = window.location.hash;
 
-  if (!h) {
-    document.write("Select a route above.");
+  var out = "";
+
+  // HEADER ALWAYS
+  out += "<b>Train Viewer v2</b><br><br>";
+
+  if (!h || h === "#") {
+    out += "Select a route.";
+    document.getElementById("output").innerHTML = out;
+    return;
   }
 
-  else if (h === "#KX-NCL") {
-    document.write("<b>KX → NCL</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
+  // ROUTES
+  if (h === "#KX-NCL") {
+    out += "<b>KX → NCL</b><br><br>";
+    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
   }
-
   else if (h === "#NCL-KX") {
-    document.write("<b>NCL → KX</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
+    out += "<b>NCL → KX</b><br><br>";
+    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
   }
-
   else if (h === "#STP-NCL") {
-    document.write("<b>STP → NCL</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
+    out += "<b>STP → NCL</b><br><br>";
+    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
+  }
+  else if (h === "#NCL-STP") {
+    out += "<b>NCL → STP</b><br><br>";
+    out += "🚆 Before<br>🚆 ⭐ Closest<br>🚆 After";
   }
 
-  else if (h === "#NCL-STP") {
-    document.write("<b>NCL → STP</b><br><br>🚆 Train 1<br>🚆 Train 2<br>🚆 Train 3");
+  // TIME MODES
+  else if (h === "#now") {
+    out += "<b>Time: Now</b>";
+  }
+  else if (h === "#m60") {
+    out += "<b>Time: -1 Hour</b>";
+  }
+  else if (h === "#p60") {
+    out += "<b>Time: +1 Hour</b>";
   }
 
   else {
-    document.write("<b>Time Mode:</b> " + h.replace("#",""));
+    out += "Unknown selection: " + h;
   }
-</script>
 
-</div>
+  document.getElementById("output").innerHTML = out;
+}
+
+// RUN ON LOAD
+window.onload = function() {
+  render();
+};
+
+// RUN ON HASH CHANGE
+window.onhashchange = function() {
+  render();
+};
+
+</script>
 
 </body>
 </html>
