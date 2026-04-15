@@ -9,9 +9,7 @@
 
 <h2>🚆 Train Viewer</h2>
 
-<div>
-  <p id="recent">Recent: loading...</p>
-</div>
+<p id="recent">Recent: loading...</p>
 
 <hr>
 
@@ -23,59 +21,91 @@
 
 <hr>
 
-<!-- TIME CONTROLS -->
-<p>Time:</p>
-<button onclick="shiftTime(-60)">-1h</button>
-<button onclick="shiftTime(0)">Now</button>
-<button onclick="shiftTime(60)">+1h</button>
+<!-- TIME -->
+<p>Time Control</p>
+<button onclick="setNow()">Now</button>
+<button onclick="shift(-60)">-1h</button>
+<button onclick="shift(60)">+1h</button>
 
 <hr>
 
-<!-- RESULTS -->
-<p id="results">Select a route</p>
+<div id="output">Select route</div>
 
 <script>
+
 let route = "";
 let baseTime = new Date();
 
-function updateRecent() {
+// load recent
+function loadRecent() {
   const r = localStorage.getItem("recentTrip");
   document.getElementById("recent").innerText =
     "Recent: " + (r ? r : "None");
 }
 
+// set route
 function setRoute(r) {
   route = r;
-  runSearch();
+  run();
 }
 
-function shiftTime(mins) {
+// time controls
+function setNow() {
+  baseTime = new Date();
+  run();
+}
+
+function shift(mins) {
   baseTime = new Date();
   baseTime.setMinutes(baseTime.getMinutes() + mins);
-  runSearch();
+  run();
 }
 
-function runSearch() {
+// fake timetable generator (we replace with real API later)
+function generateTrains(base) {
+  let trains = [];
+
+  for (let i = -1; i <= 1; i++) {
+    let t = new Date(base);
+    t.setMinutes(t.getMinutes() + i * 30);
+
+    let h = t.getHours();
+    let m = String(t.getMinutes()).padStart(2, "0");
+
+    trains.push({
+      time: h + ":" + m,
+      label: i === 0 ? "⭐ Closest" : (i < 0 ? "Before" : "After")
+    });
+  }
+
+  return trains;
+}
+
+// main engine
+function run() {
   if (!route) return;
 
-  const timeStr = baseTime.getHours() + ":" + String(baseTime.getMinutes()).padStart(2,"0");
+  const trains = generateTrains(baseTime);
 
-  const summary = route + "@" + timeStr;
-  localStorage.setItem("recentTrip", summary);
-  updateRecent();
+  const timeStr =
+    baseTime.getHours() + ":" +
+    String(baseTime.getMinutes()).padStart(2, "0");
 
-  // fake trains (we replace with real API later)
-  const output =
-    "Route: " + route + "<br>" +
-    "Selected time: " + timeStr + "<br><br>" +
-    "🚆 Train A (before)<br>" +
-    "🚆 ⭐ Train B (closest)<br>" +
-    "🚆 Train C (after)<br>";
+  localStorage.setItem("recentTrip", route + " @ " + timeStr);
+  loadRecent();
 
-  document.getElementById("results").innerHTML = output;
+  let html = "<h3>Route: " + route + "</h3>";
+  html += "<p>Selected: " + timeStr + "</p><hr>";
+
+  for (let i = 0; i < trains.length; i++) {
+    html += "🚆 " + trains[i].label + " - " + trains[i].time + "<br>";
+  }
+
+  document.getElementById("output").innerHTML = html;
 }
 
-updateRecent();
+loadRecent();
+
 </script>
 
 </body>
