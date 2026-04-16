@@ -3,19 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer v8.13</title>
+<title>Train Viewer v8.14</title>
 <style>
-  body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 1em; }
-  select, button { padding: 0.5em; margin: 0.3em 0; font-size: 1em; }
-  .label { font-weight: bold; margin-top: 1em; display: block; }
-  #results { margin-top: 1em; }
+body { font-family: Arial, sans-serif; padding: 20px; background: #f2f2f2; }
+h1 { margin-bottom: 20px; }
+label { display: block; margin-top: 10px; margin-bottom: 5px; }
+select { padding: 5px; margin-right: 5px; }
+button { margin-top: 15px; padding: 10px 20px; }
+#results { margin-top: 20px; font-family: monospace; white-space: pre-line; }
 </style>
 </head>
 <body>
 
-<h1>Train Viewer v8.13</h1>
+<h1>Train Viewer v8.14</h1>
 
-<label class="label">Route:</label>
+<label for="route">Route:</label>
 <select id="route">
   <option value="KGX-NCL">King's X → Newcastle</option>
   <option value="NCL-KGX">Newcastle → King's X</option>
@@ -23,105 +25,82 @@
   <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
 
-<label class="label">Date:</label>
-<select id="day">
-  <!-- Hardcoded days 1-31 -->
-  <option value="01">01</option><option value="02">02</option><option value="03">03</option>
-  <option value="04">04</option><option value="05">05</option><option value="06">06</option>
-  <option value="07">07</option><option value="08">08</option><option value="09">09</option>
-  <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-  <option value="13">13</option><option value="14">14</option><option value="15">15</option>
-  <option value="16">16</option><option value="17">17</option><option value="18">18</option>
-  <option value="19">19</option><option value="20">20</option><option value="21">21</option>
-  <option value="22">22</option><option value="23">23</option><option value="24">24</option>
-  <option value="25">25</option><option value="26">26</option><option value="27">27</option>
-  <option value="28">28</option><option value="29">29</option><option value="30">30</option>
-  <option value="31">31</option>
-</select>
+<label>Date:</label>
+<select id="date"></select>
+<select id="month"></select>
+<select id="year"></select>
 
-<select id="month">
-  <option value="01">01 - JAN</option>
-  <option value="02">02 - FEB</option>
-  <option value="03">03 - MAR</option>
-  <option value="04">04 - APR</option>
-  <option value="05">05 - MAY</option>
-  <option value="06">06 - JUN</option>
-  <option value="07">07 - JUL</option>
-  <option value="08">08 - AUG</option>
-  <option value="09">09 - SEP</option>
-  <option value="10">10 - OCT</option>
-  <option value="11">11 - NOV</option>
-  <option value="12">12 - DEC</option>
-</select>
+<label>Time:</label>
+<select id="hour"></select> :
+<select id="minute"></select>
 
-<select id="year">
-  <option value="2026">2026</option><option value="2027">2027</option>
-  <option value="2028">2028</option><option value="2029">2029</option>
-  <option value="2030">2030</option><option value="2031">2031</option>
-  <option value="2032">2032</option><option value="2033">2033</option>
-  <option value="2034">2034</option><option value="2035">2035</option>
-  <option value="2036">2036</option>
-</select>
-
-<label class="label">Time:</label>
-<select id="hour">
-  <option value="00">00</option><option value="01">01</option><option value="02">02</option>
-  <option value="03">03</option><option value="04">04</option><option value="05">05</option>
-  <option value="06">06</option><option value="07">07</option><option value="08">08</option>
-  <option value="09">09</option><option value="10">10</option><option value="11">11</option>
-  <option value="12">12</option><option value="13">13</option><option value="14">14</option>
-  <option value="15">15</option><option value="16">16</option><option value="17">17</option>
-  <option value="18">18</option><option value="19">19</option><option value="20">20</option>
-  <option value="21">21</option><option value="22">22</option><option value="23">23</option>
-</select>
-:
-<select id="minute">
-  <option value="00">00</option><option value="05">05</option><option value="10">10</option>
-  <option value="15">15</option><option value="20">20</option><option value="25">25</option>
-  <option value="30">30</option><option value="35">35</option><option value="40">40</option>
-  <option value="45">45</option><option value="50">50</option><option value="55">55</option>
-</select>
-
-<button id="search">Search Trains</button>
+<br>
+<button id="search">Search</button>
 
 <div id="results"></div>
 
 <script>
-async function fetchTrains() {
-  const route = document.getElementById("route").value;
-  const day = document.getElementById("day").value;
-  const month = document.getElementById("month").value;
-  const year = document.getElementById("year").value;
-  const hour = document.getElementById("hour").value;
-  const minute = document.getElementById("minute").value;
+// Populate Date, Month, Year
+var dateSelect = document.getElementById("date");
+for(var d=1; d<=31; d++){ var opt=document.createElement("option"); opt.value=d; opt.text=d; dateSelect.add(opt); }
 
-  const resultsDiv = document.getElementById("results");
+var monthSelect = document.getElementById("month");
+var months = ["01 - JAN","02 - FEB","03 - MAR","04 - APR","05 - MAY","06 - JUN","07 - JUL","08 - AUG","09 - SEP","10 - OCT","11 - NOV","12 - DEC"];
+for(var i=0;i<months.length;i++){ var opt=document.createElement("option"); opt.value=i+1; opt.text=months[i]; monthSelect.add(opt); }
+
+var yearSelect = document.getElementById("year");
+for(var y=2026; y<=2036; y++){ var opt=document.createElement("option"); opt.value=y; opt.text=y; yearSelect.add(opt); }
+
+// Populate Hour and Minute
+var hourSelect = document.getElementById("hour");
+for(var h=0;h<24;h++){ var val = h<10?"0"+h:h; var opt=document.createElement("option"); opt.value=val; opt.text=val; hourSelect.add(opt); }
+
+var minuteSelect = document.getElementById("minute");
+for(var m=0;m<60;m+=5){ var val = m<10?"0"+m:m; var opt=document.createElement("option"); opt.value=val; opt.text=val; minuteSelect.add(opt); }
+
+// XMLHttpRequest version for better Opera Mini support
+function fetchTrains() {
+  var route = document.getElementById("route").value;
+  var resultsDiv = document.getElementById("results");
   resultsDiv.innerHTML = "Loading...";
 
-  try {
-    const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${route}`);
-    const data = await res.json();
-    if(data.error) {
-      resultsDiv.innerHTML = `<span style="color:red;">${data.error}</span>`;
-      return;
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "https://train-api-v2.onrender.com/trains?route=" + route, true);
+  xhr.onreadystatechange = function() {
+    if(xhr.readyState === 4){
+      if(xhr.status === 200){
+        try{
+          var data = JSON.parse(xhr.responseText);
+          if(data.error){
+            resultsDiv.innerHTML = "<span style='color:red;'>"+data.error+"</span>";
+            return;
+          }
+          var html = "";
+          for(var i=0;i<data.data.length;i++){
+            var t=data.data[i];
+            html += "Time: " + t.time + " | Platform: " + t.platform + " | Status: " + t.status + " | Operator: " + t.operator + "\n";
+          }
+          resultsDiv.innerText = html;
+        }catch(e){
+          resultsDiv.innerHTML = "<span style='color:red;'>Error parsing train data.</span>";
+        }
+      } else {
+        resultsDiv.innerHTML = "<span style='color:red;'>Error fetching train data.</span>";
+      }
     }
-    resultsDiv.innerHTML = data.data.map(t => `
-      Time: ${t.time} | Platform: ${t.platform} | Status: ${t.status} | Operator: ${t.operator}
-    `).join("<br>");
-  } catch(e) {
-    resultsDiv.innerHTML = `<span style="color:red;">Error fetching train data.</span>`;
-    console.error(e);
-  }
+  };
+  xhr.send();
 }
 
-document.getElementById("search").addEventListener("click", fetchTrains);
+document.getElementById("search").onclick = fetchTrains;
 
-setInterval(() => {
-  const resultsDiv = document.getElementById("results");
-  if(resultsDiv.innerHTML.trim() && !resultsDiv.innerHTML.includes("Error")) {
+// Auto-refresh every 15 seconds if results exist
+setInterval(function(){
+  var resultsDiv = document.getElementById("results");
+  if(resultsDiv.innerText.trim() && !resultsDiv.innerText.includes("Error")){
     fetchTrains();
   }
-}, 15000);
+},15000);
 </script>
 
 </body>
