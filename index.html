@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer V8.18.5</title>
+<title>Train Viewer V8.18.6</title>
 <style>
   body { background-color: black; color: white; font-family: monospace; padding: 20px; }
   h1 { color: white; }
-  select, input { background: black; color: white; border: 1px solid white; margin: 2px; padding: 5px; }
-  button { background: #222; color: white; border: 1px solid white; padding: 5px 10px; cursor: pointer; }
+  input, select, button { background: black; color: white; border: 1px solid white; margin: 2px; padding: 5px; }
+  button { cursor: pointer; }
   .train { border-bottom: 1px solid #555; padding: 5px 0; }
   .operator-lner { color: red; }
   .operator-lumo { color: blue; }
@@ -18,7 +18,7 @@
 </head>
 <body>
 
-<h1>Train Viewer V8.18.5</h1>
+<h1>Train Viewer V8.18.6</h1>
 
 <form id="trainForm">
   <label>Route: 
@@ -31,13 +31,14 @@
   </label>
   <br>
   <label>Date: 
-    <select id="day"></select>
-    <select id="month"></select>
-    <select id="year"></select>
+    <input type="number" id="day" min="1" max="31"> 
+    <select id="month"></select> 
+    <input type="number" id="year" min="2026" max="2036">
   </label>
   <br>
   <label>Time: 
-    <select id="hour"></select>:<select id="minute"></select>
+    <input type="number" id="hour" min="0" max="23"> : 
+    <select id="minute"></select>
   </label>
   <br>
   <button type="submit">Search</button>
@@ -59,13 +60,9 @@
     '07 - JUL','08 - AUG','09 - SEP','10 - OCT','11 - NOV','12 - DEC'
   ];
 
-  for(let i=1;i<=31;i++) dayEl.add(new Option(i,i));
   months.forEach((m,i)=> monthEl.add(new Option(m, i+1)));
-  for(let y=2026;y<=2036;y++) yearEl.add(new Option(y,y));
-  for(let h=0;h<=23;h++) hourEl.add(new Option(h.toString().padStart(2,'0'), h));
   for(let m=0;m<60;m+=5) minuteEl.add(new Option(m.toString().padStart(2,'0'), m));
 
-  // set default current date/time
   const now = new Date();
   dayEl.value = now.getDate();
   monthEl.value = now.getMonth()+1;
@@ -94,16 +91,16 @@
     e.preventDefault();
     resultsEl.innerHTML = '';
     const route = document.getElementById('route').value;
-    const day = dayEl.value;
-    const month = monthEl.value;
+    const day = String(dayEl.value).padStart(2,'0');
+    const month = String(monthEl.value).padStart(2,'0');
     const year = yearEl.value;
-    const hour = hourEl.value;
-    const minute = minuteEl.value;
+    const hour = String(hourEl.value).padStart(2,'0');
+    const minute = String(minuteEl.value).padStart(2,'0');
 
     const res = await fetch(`${API_URL}?route=${route}&day=${day}&month=${month}&year=${year}&hour=${hour}&minute=${minute}`);
     const data = await res.json();
 
-    if(data.data.length===0){ resultsEl.textContent='No trains found'; return; }
+    if(!data.data || data.data.length===0){ resultsEl.textContent='No trains found'; return; }
 
     data.data.forEach(tr=>{
       const div = document.createElement('div');
