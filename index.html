@@ -1,217 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Train Viewer v8.8</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Train Viewer v8.8</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+  select, input, button { padding: 8px; margin: 5px 0; width: 100%; }
+  #results { margin-top: 20px; }
+  .train { border-bottom: 1px solid #ccc; padding: 8px 0; }
+</style>
 </head>
+<body>
+<h1>Train Viewer v8.8</h1>
 
-<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
+<label for="route">Route</label>
+<input id="route" placeholder="KGX-NCL" />
 
-<!-- HEADER -->
-<div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">Train Viewer v8.8</h2>
-  <p style="margin:0;color:yellow;">Improved train layout</p>
-</div>
+<label for="date">Date</label>
+<select id="date"></select>
 
-<hr>
+<label for="time">Time</label>
+<select id="time"></select>
 
-<div id="recent">Recent: None</div>
+<button id="searchBtn">Search Trains</button>
 
-<hr>
-
-<p><b>Route</b></p>
-
-<select id="route">
-  <option value="KX-NCL">King's X → Newcastle</option>
-  <option value="NCL-KX">Newcastle → King's X</option>
-  <option value="STP-NCL">St. Pancras → Newcastle</option>
-  <option value="NCL-STP">Newcastle → St. Pancras</option>
-</select>
-
-<hr>
-
-<p><b>Date</b></p>
-
-<select id="day"></select>
-<select id="month"></select>
-<select id="year"></select>
-
-<p><b>Time</b></p>
-
-<select id="hour"></select>
-<select id="minute"></select>
-
-<br><br>
-
-<button onclick="run()">Search Trains</button>
-
-<hr>
-
-<div id="output">
-Enter details and press search
-</div>
+<div id="results">Search to see train times</div>
 
 <script>
+const apiURL = "https://train-api-v2.onrender.com/trains";
 
-var selectedTime = 0;
-var recentMemory = "None";
-var refreshInterval = null;
+function populateSelectors() {
+  const dateSelect = document.getElementById("date");
+  const timeSelect = document.getElementById("time");
 
-// INIT
-function init() {
-  var now = new Date();
+  dateSelect.innerHTML = "";
+  timeSelect.innerHTML = "";
 
-  buildSelect("day", 1, 31, now.getDate());
-  buildMonthSelect();
-  buildSelect("year", 2025, 2035, now.getFullYear());
+  dateSelect.appendChild(new Option("Select Date", ""));
+  timeSelect.appendChild(new Option("Select Time", ""));
 
-  buildSelect("hour", 0, 23, now.getHours());
-  buildSelect("minute", 0, 59, now.getMinutes());
-
-  loadRecent();
-}
-
-// RECENT
-function loadRecent() {
-  var r;
-  try {
-    r = localStorage.getItem("recentTrip");
-  } catch(e) {
-    r = null;
+  for (let d = 16; d <= 30; d++) {
+    const val = `${d}-04-2026`;
+    dateSelect.appendChild(new Option(val, val));
   }
-  if (!r) r = recentMemory;
-  document.getElementById("recent").innerHTML = "Recent: " + r;
-}
 
-function saveRecent(route, timeStr) {
-  var map = {
-    "KX-NCL":"KGX→NCL",
-    "NCL-KX":"NCL→KGX",
-    "STP-NCL":"STP→NCL",
-    "NCL-STP":"NCL→STP"
-  };
-  var line = map[route] + "@" + timeStr;
-  recentMemory = line;
-  try {
-    localStorage.setItem("recentTrip", line);
-  } catch(e) {}
-}
-
-// BUILD SELECT
-function buildSelect(id, start, end, selected) {
-  var el = document.getElementById(id);
-  for (var i = start; i <= end; i++) {
-    var val = i;
-    if (i < 10) val = "0" + i;
-    var opt = document.createElement("option");
-    opt.value = i;
-    opt.text = val;
-    if (i === selected) opt.selected = true;
-    el.appendChild(opt);
+  for (let h = 8; h <= 20; h++) {
+    const hh = h.toString().padStart(2, "0");
+    const val = `${hh}:00`;
+    timeSelect.appendChild(new Option(val, val));
   }
 }
 
-// MONTH SELECT
-function buildMonthSelect() {
-  var names = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-  var el = document.getElementById("month");
-  var now = new Date().getMonth() + 1;
-  for (var i = 1; i <= 12; i++) {
-    var num = i;
-    if (i < 10) num = "0" + i;
-    var opt = document.createElement("option");
-    opt.value = i;
-    opt.text = num + ": " + names[i-1];
-    if (i === now) opt.selected = true;
-    el.appendChild(opt);
-  }
-}
-
-// DATE TEXT
-function getDateText() {
-  var d = document.getElementById("day").value;
-  var m = document.getElementById("month").value;
-  var y = document.getElementById("year").value;
-  if (d < 10) d = "0" + d;
-  if (m < 10) m = "0" + m;
-  return d + "-" + m + "-" + y;
-}
-
-// FORMAT TIME
-function format(mins) {
-  mins = mins % 1440;
-  if (mins < 0) mins += 1440;
-  var h = Math.floor(mins / 60);
-  var m = mins % 60;
-  if (h < 10) h = "0" + h;
-  if (m < 10) m = "0" + m;
-  return h + ":" + m;
-}
-
-// FETCH LIVE TRAINS
-async function fetchTrains(route, date, time) {
-  try {
-    const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${route}&date=${date}&time=${time}`);
-    if (!res.ok) throw new Error("API fetch failed");
-    const json = await res.json();
-    return json.data;
-  } catch(e) {
-    console.error(e);
-    return null;
-  }
-}
-
-// MAIN
-async function run() {
-  var route = document.getElementById("route").value;
-  var h = parseInt(document.getElementById("hour").value);
-  var m = parseInt(document.getElementById("minute").value);
-  var timeStr = format((h * 60) + m);
-  selectedTime = (h * 60) + m;
-
-  saveRecent(route, timeStr);
-  loadRecent();
-
-  displayOutput("Loading...");
-
-  const dateStr = getDateText();
-  const trains = await fetchTrains(route, dateStr, timeStr);
-
-  if (!trains) {
-    displayOutput("Error fetching train data.");
-    return;
-  }
-
-  displayTrains(trains, dateStr, timeStr);
-
-  // Clear previous interval
-  if (refreshInterval) clearInterval(refreshInterval);
-
-  // Set up auto-refresh every 15 seconds
-  refreshInterval = setInterval(async () => {
-    const updatedTrains = await fetchTrains(route, dateStr, timeStr);
-    if (updatedTrains) displayTrains(updatedTrains, dateStr, timeStr);
-  }, 15000);
-}
-
-function displayOutput(html) {
-  document.getElementById("output").innerHTML = html;
-}
-
-function displayTrains(trains, dateStr, timeStr) {
-  let html = `<b>Date:</b> ${dateStr}<br><b>Time:</b> ${timeStr}<br><hr>`;
-  trains.forEach(train => {
-    html += `Time: ${train.time} | Platform: ${train.platform} | Status: ${train.status} | Operator: ${train.operator}<br>`;
-  });
-  displayOutput(html);
-}
-
-window.onload = init;
-
-</script>
-
-</body>
-</html>
+async function searchTrains() {
+  const route = document.getElementById("route").value.trim();
+  const date = document.getElementById("date").value;
+  const time = document.getElementById("time
