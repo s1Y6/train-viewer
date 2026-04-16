@@ -100,7 +100,7 @@ function run() {
 
 // FETCH TRAIN DATA FROM BACKEND
 function fetchTrains(route) {
-  fetch(`https://<your-render-app>.onrender.com/api/train/${route}`)
+  fetch(`https://train-api-v2.onrender.com/api/train/${route}`)
     .then(res => res.json())
     .then(data => {
       displayTrains(data);
