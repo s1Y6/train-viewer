@@ -3,105 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer v8.14</title>
+<title>Train Viewer V8.11</title>
 <style>
-body { font-family: Arial, sans-serif; padding: 20px; background: #f2f2f2; }
-h1 { margin-bottom: 20px; }
-label { display: block; margin-top: 10px; margin-bottom: 5px; }
-select { padding: 5px; margin-right: 5px; }
-button { margin-top: 15px; padding: 10px 20px; }
-#results { margin-top: 20px; font-family: monospace; white-space: pre-line; }
+  body { font-family: Arial, sans-serif; background: #f0f0f0; color: #333; margin: 0; padding: 20px; }
+  h1 { text-align: center; }
+  .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  select, button { width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
+  button { background: #333; color: #fff; cursor: pointer; }
+  button:hover { opacity: 0.9; }
+  .results { margin-top: 20px; }
+  .train { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
+  .operator.lner { color: #d32f2f; font-weight: bold; } /* Red similar to LNER logo */
+  .operator.lumo { color: #1976d2; font-weight: bold; }  /* Blue for Lumo */
+  .countdown { margin-top: 10px; font-size: 14px; text-align: center; color: #555; }
+  .credit { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
 </style>
 </head>
 <body>
+<div class="container">
+  <h1>Train Viewer V8.11</h1>
 
-<h1>Train Viewer v8.14</h1>
+  <label for="route">Route:</label>
+  <select id="route">
+    <option value="KGX-NCL">King's X → Newcastle</option>
+    <option value="NCL-KGX">Newcastle → King's X</option>
+    <option value="STP-NCL">St. Pancras → Newcastle</option>
+    <option value="NCL-STP">Newcastle → St. Pancras</option>
+  </select>
 
-<label for="route">Route:</label>
-<select id="route">
-  <option value="KGX-NCL">King's X → Newcastle</option>
-  <option value="NCL-KGX">Newcastle → King's X</option>
-  <option value="STP-NCL">St. Pancras → Newcastle</option>
-  <option value="NCL-STP">Newcastle → St. Pancras</option>
-</select>
+  <label for="day">Date:</label>
+  <select id="day"></select>
+  <select id="month"></select>
+  <select id="year"></select>
 
-<label>Date:</label>
-<select id="date"></select>
-<select id="month"></select>
-<select id="year"></select>
+  <label for="hour">Time:</label>
+  <select id="hour"></select> : <select id="minute"></select>
 
-<label>Time:</label>
-<select id="hour"></select> :
-<select id="minute"></select>
+  <button id="searchBtn">Search</button>
 
-<br>
-<button id="search">Search</button>
+  <div class="countdown" id="countdown"></div>
+  <div class="results" id="results"></div>
+</div>
 
-<div id="results"></div>
+<div class="credit">Credit: LDBWS</div>
 
 <script>
-// Populate Date, Month, Year
-var dateSelect = document.getElementById("date");
-for(var d=1; d<=31; d++){ var opt=document.createElement("option"); opt.value=d; opt.text=d; dateSelect.add(opt); }
+  // Populate date/time dropdowns
+  const daySelect = document.getElementById('day');
+  const monthSelect = document.getElementById('month');
+  const yearSelect = document.getElementById('year');
+  const hourSelect = document.getElementById('hour');
+  const minuteSelect = document.getElementById('minute');
 
-var monthSelect = document.getElementById("month");
-var months = ["01 - JAN","02 - FEB","03 - MAR","04 - APR","05 - MAY","06 - JUN","07 - JUL","08 - AUG","09 - SEP","10 - OCT","11 - NOV","12 - DEC"];
-for(var i=0;i<months.length;i++){ var opt=document.createElement("option"); opt.value=i+1; opt.text=months[i]; monthSelect.add(opt); }
+  for(let d=1; d<=31; d++) daySelect.add(new Option(d, d));
+  const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  for(let m=1; m<=12; m++) monthSelect.add(new Option(`${m} - ${monthNames[m-1]}`, m));
+  for(let y=2026; y<=2036; y++) yearSelect.add(new Option(y, y));
+  for(let h=0; h<24; h++) hourSelect.add(new Option(String(h).padStart(2,'0'), h));
+  for(let min=0; min<60; min+=5) minuteSelect.add(new Option(String(min).padStart(2,'0'), min));
 
-var yearSelect = document.getElementById("year");
-for(var y=2026; y<=2036; y++){ var opt=document.createElement("option"); opt.value=y; opt.text=y; yearSelect.add(opt); }
+  const searchBtn = document.getElementById('searchBtn');
+  const resultsDiv = document.getElementById('results');
+  const countdownDiv = document.getElementById('countdown');
+  let countdownTimer;
 
-// Populate Hour and Minute
-var hourSelect = document.getElementById("hour");
-for(var h=0;h<24;h++){ var val = h<10?"0"+h:h; var opt=document.createElement("option"); opt.value=val; opt.text=val; hourSelect.add(opt); }
-
-var minuteSelect = document.getElementById("minute");
-for(var m=0;m<60;m+=5){ var val = m<10?"0"+m:m; var opt=document.createElement("option"); opt.value=val; opt.text=val; minuteSelect.add(opt); }
-
-// XMLHttpRequest version for better Opera Mini support
-function fetchTrains() {
-  var route = document.getElementById("route").value;
-  var resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = "Loading...";
-
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", "https://train-api-v2.onrender.com/trains?route=" + route, true);
-  xhr.onreadystatechange = function() {
-    if(xhr.readyState === 4){
-      if(xhr.status === 200){
-        try{
-          var data = JSON.parse(xhr.responseText);
-          if(data.error){
-            resultsDiv.innerHTML = "<span style='color:red;'>"+data.error+"</span>";
-            return;
-          }
-          var html = "";
-          for(var i=0;i<data.data.length;i++){
-            var t=data.data[i];
-            html += "Time: " + t.time + " | Platform: " + t.platform + " | Status: " + t.status + " | Operator: " + t.operator + "\n";
-          }
-          resultsDiv.innerText = html;
-        }catch(e){
-          resultsDiv.innerHTML = "<span style='color:red;'>Error parsing train data.</span>";
-        }
-      } else {
-        resultsDiv.innerHTML = "<span style='color:red;'>Error fetching train data.</span>";
-      }
-    }
-  };
-  xhr.send();
-}
-
-document.getElementById("search").onclick = fetchTrains;
-
-// Auto-refresh every 15 seconds if results exist
-setInterval(function(){
-  var resultsDiv = document.getElementById("results");
-  if(resultsDiv.innerText.trim() && !resultsDiv.innerText.includes("Error")){
+  searchBtn.addEventListener('click', () => {
     fetchTrains();
-  }
-},15000);
-</script>
+  });
 
+  async function fetchTrains() {
+    const route = document.getElementById('route').value;
+    const day = daySelect.value;
+    const month = monthSelect.value;
+    const year = yearSelect.value;
+    const hour = hourSelect.value;
+    const minute = minuteSelect.value;
+
+    const url = `https://train-api-v2.onrender.com/trains?route=${route}&date=${day}-${month}-${year}&time=${hour}:${minute}`;
+
+    try {
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("Error fetching train data.");
+      const data = await res.json();
+      displayTrains(data.data);
+      startCountdown();
+    } catch(e) {
+      resultsDiv.innerHTML = `<p style="color:red;">${e.message}</p>`;
+    }
+  }
+
+  function displayTrains(trains) {
+    resultsDiv.innerHTML = '';
+    if(trains.length === 0) {
+      resultsDiv.innerHTML = '<p>No trains found.</p>';
+      return;
+    }
+    trains.forEach(train => {
+      const div = document.createElement('div');
+      div.className = 'train';
+      const operatorClass = train.operator.toLowerCase() === 'lner' ? 'operator lner' : 'operator lumo';
+      div.innerHTML = `
+        <span>${train.time} | Platform: ${train.platform} | Status: ${train.status}</span>
+        <span class="${operatorClass}">${train.operator}</span>
+      `;
+      resultsDiv.appendChild(div);
+    });
+  }
+
+  function startCountdown() {
+    clearInterval(countdownTimer);
+    let timeLeft = 15;
+    countdownDiv.textContent = `Next refresh in ${timeLeft} sec`;
+    countdownTimer = setInterval(() => {
+      timeLeft--;
+      if(timeLeft <= 0) {
+        clearInterval(countdownTimer);
+        fetchTrains();
+      } else {
+        countdownDiv.textContent = `Next refresh in ${timeLeft} sec`;
+      }
+    }, 1000);
+  }
+</script>
 </body>
 </html>
