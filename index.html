@@ -2,15 +2,15 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v8.5</title>
+  <title>Train Viewer v8.6</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">Train Viewer v8.5</h2>
-  <p style="margin:0;color:yellow;">Stability fixes</p>
+  <h2 style="margin:0;color:lime;">Train Viewer v8.6</h2>
+  <p style="margin:0;color:yellow;">Improved train layout</p>
 </div>
 
 <hr>
@@ -71,7 +71,7 @@ function init() {
   loadRecent();
 }
 
-// LOAD RECENT
+// RECENT
 function loadRecent() {
 
   var r;
@@ -87,7 +87,6 @@ function loadRecent() {
   document.getElementById("recent").innerHTML = "Recent: " + r;
 }
 
-// SAVE RECENT
 function saveRecent(route, timeStr) {
 
   var map = {
@@ -104,7 +103,6 @@ function saveRecent(route, timeStr) {
   try {
     localStorage.setItem("recentTrip", line);
   } catch(e) {}
-
 }
 
 // BUILD SELECT
@@ -191,7 +189,7 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAINS (SAFE BUTTONS)
+// BUILD TRAINS (UPDATED FORMAT)
 function buildTrains() {
 
   var before = selectedTime - 25;
@@ -200,11 +198,11 @@ function buildTrains() {
 
   var out = "";
 
-  out += "<button onclick='showTrain(" + before + ")'>Earlier: " + format(before) + "</button><br><br>";
+  out += "<button onclick='showTrain(" + before + ")'><span style='color:lime;'>" + format(before) + "</span> - Earlier</button><br><br>";
 
-  out += "<button onclick='showTrain(" + closest + ")'>Immediate: " + format(closest) + "</button><br><br>";
+  out += "<button onclick='showTrain(" + closest + ")'><span style='color:lime;'>" + format(closest) + "</span> - Immediate</button><br><br>";
 
-  out += "<button onclick='showTrain(" + after + ")'>Later: " + format(after) + "</button>";
+  out += "<button onclick='showTrain(" + after + ")'><span style='color:lime;'>" + format(after) + "</span> - Later</button>";
 
   return out;
 }
