@@ -2,16 +2,20 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v8.2</title>
+  <title>Train Viewer v8.3</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">Train Viewer v8.2</h2>
-  <p style="margin:0;color:yellow;">Improved picker + white results</p>
+  <h2 style="margin:0;color:lime;">Train Viewer v8.3</h2>
+  <p style="margin:0;color:yellow;">Recent trip memory added</p>
 </div>
+
+<hr>
+
+<div id="recent">Recent: None</div>
 
 <hr>
 
@@ -44,7 +48,7 @@
 <hr>
 
 <div id="output">
-<b>Train Viewer v8.2</b><br><br>
+<b>Train Viewer v8.3</b><br><br>
 Enter details and press search
 </div>
 
@@ -63,6 +67,30 @@ function init() {
 
   buildSelect("hour", 0, 23, now.getHours());
   buildSelect("minute", 0, 59, now.getMinutes());
+
+  loadRecent();
+}
+
+// LOAD RECENT
+function loadRecent() {
+  var r = localStorage.getItem("recentTrip");
+  if (!r) r = "None";
+  document.getElementById("recent").innerHTML = "Recent: " + r;
+}
+
+// SAVE RECENT
+function saveRecent(route, timeStr) {
+
+  var map = {
+    "KX-NCL":"KX→NCL",
+    "NCL-KX":"NCL→KX",
+    "STP-NCL":"STP→NCL",
+    "NCL-STP":"NCL→STP"
+  };
+
+  var line = map[route] + "@" + timeStr;
+
+  localStorage.setItem("recentTrip", line);
 }
 
 // NORMAL SELECT
@@ -85,7 +113,7 @@ function buildSelect(id, start, end, selected) {
   }
 }
 
-// MONTH SELECT (NEW)
+// MONTH SELECT
 function buildMonthSelect() {
 
   var names = [
@@ -127,15 +155,23 @@ function getDateText() {
 // MAIN
 function run() {
 
+  var route = document.getElementById("route").value;
+
   var h = parseInt(document.getElementById("hour").value);
   var m = parseInt(document.getElementById("minute").value);
 
+  var timeStr = format((h * 60) + m);
+
   selectedTime = (h * 60) + m;
 
-  var html = "<b>Train Viewer v8.2</b><br><br>";
+  // SAVE RECENT
+  saveRecent(route, timeStr);
+  loadRecent();
+
+  var html = "<b>Train Viewer v8.3</b><br><br>";
 
   html += "<b>Date:</b> " + getDateText() + "<br>";
-  html += "<b>Time:</b> " + format(selectedTime) + "<br><hr>";
+  html += "<b>Time:</b> " + timeStr + "<br><hr>";
 
   html += buildTrains();
 
@@ -160,7 +196,7 @@ function buildTrains() {
   return out;
 }
 
-// DETAILS (NOW WHITE)
+// DETAILS
 function showTrain(mins) {
 
   var operator = pickOperator(mins);
@@ -169,7 +205,7 @@ function showTrain(mins) {
 
   var html = "<div style='color:white;'>";
 
-  html += "<b>Train Viewer v8.2</b><br><br>";
+  html += "<b>Train Viewer v8.3</b><br><br>";
 
   html += "<b>Operator:</b> " + operator + "<br><br>";
   html += "<b>Platform:</b> " + platform + "<br><br>";
