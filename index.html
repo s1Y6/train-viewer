@@ -3,143 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer V8.18.7</title>
+<title>Train Viewer V18.6</title>
 <style>
-    body { background: black; color: white; font-family: monospace; margin: 20px; }
-    select, button { background: black; color: white; border: 1px solid white; padding: 5px; font-size: 1em; }
-    .operator { font-weight: bold; padding: 2px 4px; border-radius: 3px; }
-    .LNER { background-color: #e06666; color: white; }
-    .Lumo { background-color: #66b3ff; color: black; }
-    .train-box { border: 1px solid white; padding: 10px; margin: 10px 0; }
-    #timer { margin-top: 10px; font-size: 0.9em; }
-    footer { margin-top: 20px; font-size: 0.8em; color: gray; }
+  body {
+    background-color: #000;
+    color: #fff;
+    font-family: monospace;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 { color: #fff; text-align:center; }
+  label { display: block; margin-top: 10px; }
+  select, input { 
+    background: #000; 
+    color: #fff; 
+    border: 1px solid #fff; 
+    padding: 5px; 
+    margin-right: 5px; 
+  }
+  button {
+    background: #fff; 
+    color: #000; 
+    border: none; 
+    padding: 5px 10px; 
+    cursor: pointer; 
+    font-weight:bold;
+  }
+  #results { margin-top:20px; }
+  .train-box {
+    background: #111;
+    border: 1px solid #fff;
+    padding:10px;
+    margin-bottom:10px;
+  }
+  .operator {
+    font-weight:bold;
+    padding:2px 4px;
+    border-radius:2px;
+  }
+  .timer {
+    text-align:right;
+    font-size:0.9em;
+    margin-top:10px;
+  }
+  footer { 
+    text-align:center; 
+    margin-top:20px; 
+    font-size:0.8em; 
+    color:#888; 
+  }
 </style>
 </head>
 <body>
 
-<h1>Train Viewer V8.18.7</h1>
+<h1>Train Viewer V18.6</h1>
 
-<label>Route:</label>
-<select id="route">
-    <option value="KGX-NCL">King's X → Newcastle</option>
-    <option value="NCL-KGX">Newcastle → King's X</option>
-    <option value="STP-NCL">St. Pancras → Newcastle</option>
-    <option value="NCL-STP">Newcastle → St. Pancras</option>
-</select>
+<label>Route:
+  <select id="route">
+    <option>King's X → Newcastle</option>
+    <option>Newcastle → King's X</option>
+    <option>St. Pancras → Newcastle</option>
+    <option>Newcastle → St. Pancras</option>
+  </select>
+</label>
 
-<br><br>
-<label>Date:</label>
-<select id="day"></select>
-<select id="month"></select>
-<select id="year"></select>
+<label>Date:
+  <select id="day"></select>
+  <select id="month"></select>
+  <select id="year"></select>
+</label>
 
-<br><br>
-<label>Time:</label>
-<select id="hour"></select>:<select id="minute"></select>
+<label>Time:
+  <select id="hour"></select> :
+  <select id="minute"></select>
+</label>
 
-<br><br>
-<button id="search">Search Trains</button>
+<button id="searchBtn">Search</button>
 
-<div id="timer">Next refresh in 15s</div>
+<div class="timer">Next refresh in <span id="refreshTimer">15</span> sec</div>
 
 <div id="results"></div>
 
 <footer>Credit: LDBWS</footer>
 
 <script>
-const routeEl = document.getElementById('route');
-const dayEl = document.getElementById('day');
-const monthEl = document.getElementById('month');
-const yearEl = document.getElementById('year');
-const hourEl = document.getElementById('hour');
-const minuteEl = document.getElementById('minute');
-const resultsEl = document.getElementById('results');
-const timerEl = document.getElementById('timer');
+const routeSelect = document.getElementById('route');
+const daySelect = document.getElementById('day');
+const monthSelect = document.getElementById('month');
+const yearSelect = document.getElementById('year');
+const hourSelect = document.getElementById('hour');
+const minuteSelect = document.getElementById('minute');
+const searchBtn = document.getElementById('searchBtn');
+const resultsDiv = document.getElementById('results');
+const timerSpan = document.getElementById('refreshTimer');
 
 const months = [
-  {num: '01', short: 'JAN'}, {num: '02', short: 'FEB'}, {num: '03', short: 'MAR'},
-  {num: '04', short: 'APR'}, {num: '05', short: 'MAY'}, {num: '06', short: 'JUN'},
-  {num: '07', short: 'JUL'}, {num: '08', short: 'AUG'}, {num: '09', short: 'SEP'},
-  {num: '10', short: 'OCT'}, {num: '11', short: 'NOV'}, {num: '12', short: 'DEC'}
+  "01 - JAN","02 - FEB","03 - MAR","04 - APR","05 - MAY","06 - JUN",
+  "07 - JUL","08 - AUG","09 - SEP","10 - OCT","11 - NOV","12 - DEC"
 ];
 
-// Populate date/time selects
-for (let i=1;i<=31;i++) dayEl.add(new Option(i,i));
-months.forEach(m => monthEl.add(new Option(`${m.num} - ${m.short}`, m.num)));
-for (let y=2026;y<=2036;y++) yearEl.add(new Option(y,y));
-for (let h=0;h<24;h++) hourEl.add(new Option(h.toString().padStart(2,'0'),h));
-for (let m=0;m<60;m+=5) minuteEl.add(new Option(m.toString().padStart(2,'0'),m));
+// Fill date/time selects
+function populateDateTime() {
+  const now = new Date();
+  daySelect.innerHTML = "";
+  for(let d=1; d<=31; d++){
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2,'0');
+    opt.textContent = String(d).padStart(2,'0');
+    if(d===now.getDate()) opt.selected = true;
+    daySelect.appendChild(opt);
+  }
 
-// Set default date/time to current
-const now = new Date();
-dayEl.value = now.getDate();
-monthEl.value = (now.getMonth()+1).toString().padStart(2,'0');
-yearEl.value = now.getFullYear();
-hourEl.value = now.getHours();
-minuteEl.value = Math.floor(now.getMinutes()/5)*5;
+  monthSelect.innerHTML = "";
+  months.forEach((m,i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i+1).padStart(2,'0');
+    opt.textContent = m;
+    if(i===now.getMonth()) opt.selected=true;
+    monthSelect.appendChild(opt);
+  });
 
-let countdown = 15;
-let timerInterval;
+  yearSelect.innerHTML = "";
+  for(let y=2026; y<=2036; y++){
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if(y===now.getFullYear()) opt.selected=true;
+    yearSelect.appendChild(opt);
+  }
 
-function updateTimer() {
-    timerEl.textContent = `Next refresh in ${countdown}s`;
-    countdown--;
-    if (countdown < 0) {
-        countdown = 15;
-        fetchTrains();
+  hourSelect.innerHTML = "";
+  for(let h=0; h<24; h++){
+    const opt = document.createElement('option');
+    opt.value = String(h).padStart(2,'0');
+    opt.textContent = String(h).padStart(2,'0');
+    if(h===now.getHours()) opt.selected=true;
+    hourSelect.appendChild(opt);
+  }
+
+  minuteSelect.innerHTML = "";
+  for(let m=0; m<60; m+=5){
+    const opt = document.createElement('option');
+    opt.value = String(m).padStart(2,'0');
+    opt.textContent = String(m).padStart(2,'0');
+    if(m===Math.floor(now.getMinutes()/5)*5) opt.selected=true;
+    minuteSelect.appendChild(opt);
+  }
+}
+
+populateDateTime();
+
+let refreshCounter = 15;
+let refreshInterval;
+
+// Fetch trains
+async function fetchTrains() {
+  const route = routeSelect.value;
+  const day = daySelect.value;
+  const month = monthSelect.value;
+  const year = yearSelect.value;
+  const hour = hourSelect.value;
+  const minute = minuteSelect.value;
+
+  const dateStr = `${year}-${month}-${day}`;
+  const timeStr = `${hour}:${minute}`;
+
+  try {
+    const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${encodeURIComponent(route)}&date=${dateStr}&time=${timeStr}`);
+    const data = await res.json();
+
+    if(data.error){
+      resultsDiv.innerHTML = `<p>${data.error}</p>`;
+      return;
     }
+
+    if(!data.data || data.data.length===0){
+      resultsDiv.innerHTML = `<p>No trains found</p>`;
+      return;
+    }
+
+    resultsDiv.innerHTML = '';
+    data.data.forEach(train=>{
+      const box = document.createElement('div');
+      box.className = 'train-box';
+      box.innerHTML = `
+        <div><strong>${train.departure}</strong> ${train.origin} → ${train.destination} ${train.termInfo ? `<span>${train.termInfo}</span>` : ''}</div>
+        <div>Platform: ${train.platform}</div>
+        <div class="operator" style="background-color:${train.operatorColor}">${train.operator}</div>
+        <div>Status: ${train.status}</div>
+        <div>Duration: ${train.duration}</div>
+        <div>Stops: ${train.stops}</div>
+      `;
+      resultsDiv.appendChild(box);
+    });
+
+  } catch(e){
+    resultsDiv.innerHTML = `<p>Error fetching trains</p>`;
+    console.error(e);
+  }
 }
 
-function fetchTrains() {
-    const route = routeEl.value;
-    const day = dayEl.value;
-    const month = monthEl.value;
-    const year = yearEl.value;
-    const hour = hourEl.value;
-    const minute = minuteEl.value;
-
-    resultsEl.innerHTML = 'Loading...';
-
-    fetch(`https://train-api-v2.onrender.com/trains?route=${route}&day=${day}&month=${month}&year=${year}&hour=${hour}&minute=${minute}`)
-    .then(res => res.json())
-    .then(data => {
-        resultsEl.innerHTML = '';
-        if (!data.data || data.data.length === 0) {
-            resultsEl.textContent = 'No trains found';
-            return;
-        }
-
-        data.data.forEach(train => {
-            const box = document.createElement('div');
-            box.className = 'train-box';
-            let term = '';
-            if (train.terminating && train.terminating !== train.destination) {
-                term = `<div>Term. @ ${train.terminating}</div>`;
-            }
-            box.innerHTML = `
-                <div><strong>${train.time}</strong> ${train.origin} → ${train.destination}</div>
-                ${term}
-                <div>Platform ${train.platform}</div>
-                <div class="operator ${train.operator.replace(' ','')}">${train.operator.replace('London North Eastern Railway','LNER')}</div>
-                <div>${train.status}</div>
-                <div>${train.duration} | ${train.stops} stops</div>
-            `;
-            resultsEl.appendChild(box);
-        });
-    })
-    .catch(err => resultsEl.textContent = 'Error fetching train data');
-}
-
-// Initial fetch and start timer
-fetchTrains();
-if (timerInterval) clearInterval(timerInterval);
-timerInterval = setInterval(updateTimer,1000);
-
-document.getElementById('search').addEventListener('click', () => {
-    countdown = 15;
-    fetchTrains();
+searchBtn.addEventListener('click', ()=>{
+  fetchTrains();
+  refreshCounter = 15;
 });
-</script>
 
+// Auto refresh timer
+refreshInterval = setInterval(()=>{
+  if(refreshCounter<=0){
+    fetchTrains();
+    refreshCounter=15;
+  } else {
+    refreshCounter--;
+  }
+  timerSpan.textContent = refreshCounter;
+}, 1000);
+
+</script>
 </body>
 </html>
