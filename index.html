@@ -2,15 +2,15 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v8.1</title>
+  <title>Train Viewer v8.2</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">Train Viewer v8.1</h2>
-  <p style="margin:0;color:yellow;">Stable picker + visible results</p>
+  <h2 style="margin:0;color:lime;">Train Viewer v8.2</h2>
+  <p style="margin:0;color:yellow;">Improved picker + white results</p>
 </div>
 
 <hr>
@@ -44,7 +44,7 @@
 <hr>
 
 <div id="output">
-<b>Train Viewer v8.1</b><br><br>
+<b>Train Viewer v8.2</b><br><br>
 Enter details and press search
 </div>
 
@@ -58,14 +58,14 @@ function init() {
   var now = new Date();
 
   buildSelect("day", 1, 31, now.getDate());
-  buildSelect("month", 1, 12, now.getMonth() + 1);
+  buildMonthSelect();
   buildSelect("year", 2025, 2035, now.getFullYear());
 
   buildSelect("hour", 0, 23, now.getHours());
   buildSelect("minute", 0, 59, now.getMinutes());
 }
 
-// BUILD SELECT
+// NORMAL SELECT
 function buildSelect(id, start, end, selected) {
 
   var el = document.getElementById(id);
@@ -80,6 +80,32 @@ function buildSelect(id, start, end, selected) {
     opt.text = val;
 
     if (i === selected) opt.selected = true;
+
+    el.appendChild(opt);
+  }
+}
+
+// MONTH SELECT (NEW)
+function buildMonthSelect() {
+
+  var names = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  var el = document.getElementById("month");
+  var now = new Date().getMonth() + 1;
+
+  for (var i = 1; i <= 12; i++) {
+
+    var num = i;
+    if (i < 10) num = "0" + i;
+
+    var opt = document.createElement("option");
+    opt.value = i;
+    opt.text = num + ": " + names[i-1];
+
+    if (i === now) opt.selected = true;
 
     el.appendChild(opt);
   }
@@ -106,7 +132,7 @@ function run() {
 
   selectedTime = (h * 60) + m;
 
-  var html = "<b>Train Viewer v8.1</b><br><br>";
+  var html = "<b>Train Viewer v8.2</b><br><br>";
 
   html += "<b>Date:</b> " + getDateText() + "<br>";
   html += "<b>Time:</b> " + format(selectedTime) + "<br><hr>";
@@ -134,14 +160,16 @@ function buildTrains() {
   return out;
 }
 
-// DETAILS
+// DETAILS (NOW WHITE)
 function showTrain(mins) {
 
   var operator = pickOperator(mins);
   var platform = (mins % 10) + 1;
   var delay = mins % 7;
 
-  var html = "<b>Train Viewer v8.1</b><br><br>";
+  var html = "<div style='color:white;'>";
+
+  html += "<b>Train Viewer v8.2</b><br><br>";
 
   html += "<b>Operator:</b> " + operator + "<br><br>";
   html += "<b>Platform:</b> " + platform + "<br><br>";
@@ -156,6 +184,8 @@ function showTrain(mins) {
   html += "Arrive: " + format(mins + 155) + "<br><br>";
 
   html += "<button onclick='run()'>Back</button>";
+
+  html += "</div>";
 
   document.getElementById("output").innerHTML = html;
 }
