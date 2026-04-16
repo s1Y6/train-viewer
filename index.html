@@ -3,119 +3,180 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer v8.15.1</title>
+<title>Train Viewer v8.17</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
-  h1 { text-align:center; }
-  select, input { font-size:16px; margin:5px; padding:5px; }
-  button { padding:6px 12px; font-size:16px; }
-  .result { background:#fff; margin:10px 0; padding:10px; border-radius:6px; }
-  .operator.LNER { color:red; font-weight:bold; }
-  .operator.Lumo { color:blue; font-weight:bold; }
-  .timer { font-size:14px; color:gray; text-align:center; margin-top:10px; }
-  footer { text-align:center; font-size:12px; margin-top:20px; color:gray; }
+  body {
+    background-color: #000;
+    color: #fff;
+    font-family: Consolas, monospace;
+    margin: 0;
+    padding: 0 10px;
+  }
+  h1 { text-align: center; margin-top: 10px; }
+  .form-section { margin: 15px 0; }
+  select {
+    padding: 5px;
+    font-size: 16px;
+    margin-right: 5px;
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #444;
+  }
+  button {
+    padding: 7px 15px;
+    font-size: 16px;
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #444;
+    cursor: pointer;
+  }
+  button:hover { background-color: #333; }
+  .train-list { margin-top: 20px; }
+  .train-item { padding: 10px; border-bottom: 1px solid #444; }
+  .operator-lner { color: #C8102E; font-weight: bold; }
+  .operator-lumo { color: #005EB8; font-weight: bold; }
+  .timer { margin-top: 10px; font-size: 14px; text-align: center; }
+  footer { text-align: center; margin: 20px 0 10px 0; font-size: 12px; color: #888; }
 </style>
 </head>
 <body>
-<h1>Train Viewer v8.15</h1>
 
-<form id="searchForm">
-  <label>Route: </label>
+<h1>Train Viewer v8.17</h1>
+
+<div class="form-section">
+  <label>Route:</label>
   <select id="route">
-    <option value="KGX-NCL">King's X → Newcastle</option>
-    <option value="NCL-KGX">Newcastle → King's X</option>
-    <option value="STP-NCL">St. Pancras → Newcastle</option>
-    <option value="NCL-STP">Newcastle → St. Pancras</option>
+    <option>King's X → Newcastle</option>
+    <option>Newcastle → King's X</option>
+    <option>St. Pancras → Newcastle</option>
+    <option>Newcastle → St. Pancras</option>
   </select>
-  <br>
-  <label>Date: </label>
+</div>
+
+<div class="form-section">
+  <label>Date:</label>
   <select id="day"></select>
   <select id="month"></select>
   <select id="year"></select>
-  <br>
-  <label>Time: </label>
-  <select id="hour"></select>:<select id="minute"></select>
-  <br>
-  <button type="submit">Search</button>
-</form>
+</div>
 
-<div id="timer" class="timer"></div>
-<div id="results"></div>
+<div class="form-section">
+  <label>Time:</label>
+  <select id="hour"></select> :
+  <select id="minute"></select>
+</div>
+
+<div class="form-section">
+  <button id="searchBtn">Search</button>
+</div>
+
+<div class="timer" id="refreshTimer"></div>
+
+<div class="train-list" id="trainResults"></div>
 
 <footer>Credit: LDBWS</footer>
 
 <script>
-const routeSelect = document.getElementById('route');
-const daySelect = document.getElementById('day');
-const monthSelect = document.getElementById('month');
-const yearSelect = document.getElementById('year');
-const hourSelect = document.getElementById('hour');
-const minuteSelect = document.getElementById('minute');
-const resultsDiv = document.getElementById('results');
-const timerDiv = document.getElementById('timer');
+// Fill date/time dropdowns
+const now = new Date();
+const daySel = document.getElementById("day");
+const monthSel = document.getElementById("month");
+const yearSel = document.getElementById("year");
+const hourSel = document.getElementById("hour");
+const minuteSel = document.getElementById("minute");
 
-const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-
-// Populate selects
-for(let i=1;i<=31;i++) daySelect.innerHTML += `<option value="${i}">${i}</option>`;
-for(let i=0;i<12;i++) monthSelect.innerHTML += `<option value="${i+1}">${i+1} - ${monthNames[i]}</option>`;
-for(let i=2026;i<=2036;i++) yearSelect.innerHTML += `<option value="${i}">${i}</option>`;
-for(let i=0;i<24;i++) hourSelect.innerHTML += `<option value="${i.toString().padStart(2,'0')}">${i.toString().padStart(2,'0')}</option>`;
-for(let i=0;i<60;i+=5) minuteSelect.innerHTML += `<option value="${i.toString().padStart(2,'0')}">${i.toString().padStart(2,'0')}</option>`;
-
-// Refresh timer
-let refreshInterval;
-
-function startTimer(seconds) {
-  clearInterval(refreshInterval);
-  let remaining = seconds;
-  timerDiv.textContent = `Next refresh in ${remaining}s`;
-  refreshInterval = setInterval(() => {
-    remaining--;
-    timerDiv.textContent = `Next refresh in ${remaining}s`;
-    if(remaining <= 0) clearInterval(refreshInterval);
-  }, 1000);
+// Day 1-31
+for(let d=1; d<=31; d++){
+  const opt = document.createElement("option");
+  opt.value = d; opt.text = d;
+  if(d===now.getDate()) opt.selected = true;
+  daySel.add(opt);
 }
 
-// Search
-document.getElementById('searchForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  resultsDiv.innerHTML = 'Loading...';
-  startTimer(15);
+// Month 1-12 + short name
+const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+for(let m=1; m<=12; m++){
+  const opt = document.createElement("option");
+  opt.value = m;
+  opt.text = m + " - " + monthNames[m-1];
+  if(m===now.getMonth()+1) opt.selected = true;
+  monthSel.add(opt);
+}
 
-  const route = routeSelect.value;
-  const date = `${daySelect.value}-${monthSelect.value}-${yearSelect.value}`;
-  const time = `${hourSelect.value}:${minuteSelect.value}`;
+// Year 2026-2036
+for(let y=2026; y<=2036; y++){
+  const opt = document.createElement("option");
+  opt.value = y; opt.text = y;
+  if(y===now.getFullYear()) opt.selected = true;
+  yearSel.add(opt);
+}
 
-  try {
-    const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${route}&date=${date}&time=${time}`);
-    if(!res.ok) throw new Error('Cannot fetch trains');
+// Hour 00-23
+for(let h=0; h<=23; h++){
+  const opt = document.createElement("option");
+  opt.value = h; opt.text = h.toString().padStart(2,'0');
+  if(h===now.getHours()) opt.selected = true;
+  hourSel.add(opt);
+}
+
+// Minute every 5 minutes
+for(let mi=0; mi<60; mi+=5){
+  const opt = document.createElement("option");
+  opt.value = mi; opt.text = mi.toString().padStart(2,'0');
+  if(mi===Math.floor(now.getMinutes()/5)*5) opt.selected = true;
+  minuteSel.add(opt);
+}
+
+// Search button click
+document.getElementById("searchBtn").addEventListener("click", async ()=>{
+  const route = document.getElementById("route").value;
+  const date = document.getElementById("day").value + "-" + document.getElementById("month").value + "-" + document.getElementById("year").value;
+  const time = document.getElementById("hour").value + ":" + document.getElementById("minute").value;
+  const url = `https://train-api-v2.onrender.com/trains?route=${encodeURIComponent(route)}&date=${date}&time=${time}`;
+  const resultsDiv = document.getElementById("trainResults");
+  resultsDiv.innerHTML = "Loading...";
+  
+  try{
+    const res = await fetch(url);
     const data = await res.json();
-
-    if(!data.data || data.data.length===0){
-      resultsDiv.innerHTML = 'No trains found.';
+    if(!data || !data.data || data.data.length===0){
+      resultsDiv.innerHTML = "<div>No trains found</div>";
       return;
     }
-
-    resultsDiv.innerHTML = '';
-    data.data.forEach(tr => {
-      const div = document.createElement('div');
-      div.className = 'result';
-      div.innerHTML = `
-        <div>${tr.time} ${routeSelect.options[routeSelect.selectedIndex].text}${tr.destination ? ' <br>Term. @ '+tr.destination : ''}</div>
-        <div>Platform: ${tr.platform}</div>
-        <div class="operator ${tr.operator}">${tr.operator}</div>
-        <div>Status: ${tr.status}</div>
-        <div>Duration: ${tr.duration} | Stops: ${tr.stops}</div>
-      `;
+    resultsDiv.innerHTML = "";
+    data.data.forEach(t=>{
+      const div = document.createElement("div");
+      div.className = "train-item";
+      let trainText = `${t.time} ${t.origin} → ${t.destination}`;
+      if(t.terminating && t.terminating!==t.destination) trainText += `<br>&nbsp;&nbsp;Term. @ ${t.terminating}`;
+      trainText += `<br>Platform ${t.platform}<br>`;
+      if(t.operator==="London North Eastern Railway") trainText += `<span class='operator-lner'>LNER</span><br>`; 
+      else if(t.operator==="Lumo") trainText += `<span class='operator-lumo'>Lumo</span><br>`;
+      else trainText += t.operator + "<br>";
+      trainText += t.status + "<br>" + t.duration + "<br>" + t.stops + " stops";
+      div.innerHTML = trainText;
       resultsDiv.appendChild(div);
     });
-
-  } catch(err) {
-    resultsDiv.innerHTML = 'Error fetching train data.';
+    startRefreshTimer();
+  }catch(err){
+    resultsDiv.innerHTML = "Error fetching train data.";
     console.error(err);
   }
 });
+
+let timerInterval;
+function startRefreshTimer(){
+  clearInterval(timerInterval);
+  let seconds = 15;
+  const timerDiv = document.getElementById("refreshTimer");
+  timerDiv.textContent = `Next refresh in ${seconds} sec`;
+  timerInterval = setInterval(()=>{
+    seconds--;
+    timerDiv.textContent = `Next refresh in ${seconds} sec`;
+    if(seconds<=0) clearInterval(timerInterval);
+  },1000);
+}
+
 </script>
 </body>
 </html>
