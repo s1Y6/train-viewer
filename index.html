@@ -1,33 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Train Viewer v8.6</title>
+  <meta charset="UTF-8">
+  <title>Train Viewer v8.7</title>
   <style>
-    body {
-      background:black;
-      color:lime;
-      font-family:monospace;
-      font-size:14px;
-    }
-    button {
-      margin: 3px 0;
-      padding: 3px 6px;
-      background: black;
-      color: lime;
-      border: 1px solid lime;
-      cursor: pointer;
-    }
-    button:hover {
-      background: lime;
-      color: black;
-    }
+    body { background:black; color:lime; font-family:monospace; font-size:14px; }
+    hr { border:1px solid lime; }
+    button { margin:5px 0; }
   </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
   <h2 style="margin:0;color:lime;">Train Viewer v8.7</h2>
   <p style="margin:0;color:yellow;">Improved train layout</p>
@@ -36,12 +19,13 @@
 <hr>
 
 <div id="recent">Recent: None</div>
+
 <hr>
 
 <p><b>Route</b></p>
 <select id="route">
-  <option value="KX-NCL">King's X → Newcastle</option>
-  <option value="NCL-KX">Newcastle → King's X</option>
+  <option value="KGX-NCL">King's X → Newcastle</option>
+  <option value="NCL-KGX">Newcastle → King's X</option>
   <option value="STP-NCL">St. Pancras → Newcastle</option>
   <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
@@ -59,6 +43,7 @@
 
 <br><br>
 <button onclick="run()">Search Trains</button>
+
 <hr>
 
 <div id="output">
@@ -66,14 +51,12 @@ Enter details and press search
 </div>
 
 <script>
-var refreshInterval = null;
-var countdown = 15;
-var currentRoute = null;
-var recentMemory = "None";
+let selectedTime = 0;
+let recentMemory = "None";
+let refreshTimer;
 
-// INIT
 function init() {
-  var now = new Date();
+  const now = new Date();
   buildSelect("day", 1, 31, now.getDate());
   buildMonthSelect();
   buildSelect("year", 2025, 2035, now.getFullYear());
@@ -82,127 +65,106 @@ function init() {
   loadRecent();
 }
 
-// MAIN SEARCH
-function run() {
-  var route = document.getElementById("route").value;
-  var h = parseInt(document.getElementById("hour").value);
-  var m = parseInt(document.getElementById("minute").value);
-  var timeStr = format(h * 60 + m);
-  saveRecent(route, timeStr);
-  loadRecent();
-
-  currentRoute = route; // store current route for auto-refresh
-  countdown = 15;       // reset countdown
-
-  fetchTrains(route);
-  setupAutoRefresh();
-}
-
-// FETCH TRAIN DATA FROM BACKEND
-function fetchTrains(route) {
-  fetch(`https://train-api-v2.onrender.com/api/train/${route}`)
-    .then(res => res.json())
-    .then(data => {
-      displayTrains(data);
-    })
-    .catch(err => {
-      document.getElementById("output").innerHTML = "Error fetching train data.";
-      console.error(err);
-    });
-}
-
-// DISPLAY TRAINS
-function displayTrains(data) {
-  var html = "<b>Date:</b> " + getDateText() + "<br>";
-  html += "<b>Route:</b> " + currentRoute + "<br><hr>";
-
-  if (!data || data.length === 0) {
-    html += "No departures found.<br>";
-  } else {
-    data.forEach(t => {
-      html += `Time: ${t.depart} → Arrive: ${t.arrive}, Platform: ${t.platform}, Status: ${t.status}, Operator: ${t.operator}<br>`;
-    });
-  }
-
-  html += `<br><div id="countdownText">Refreshing in: ${countdown}s</div>`;
-  document.getElementById("output").innerHTML = html;
-}
-
-// AUTO REFRESH SETUP
-function setupAutoRefresh() {
-  if (refreshInterval) clearInterval(refreshInterval);
-
-  refreshInterval = setInterval(() => {
-    countdown--;
-    if (countdown <= 0) {
-      countdown = 15;
-      if (currentRoute) fetchTrains(currentRoute);
-    }
-    var countdownEl = document.getElementById("countdownText");
-    if (countdownEl) countdownEl.innerHTML = `Refreshing in: ${countdown}s`;
-  }, 1000);
-}
-
-// RECENT ROUTES
 function loadRecent() {
-  var r;
-  try { r = localStorage.getItem("recentTrip"); } catch(e){ r=null; }
+  let r;
+  try { r = localStorage.getItem("recentTrip"); } catch(e) { r = null; }
   if (!r) r = recentMemory;
   document.getElementById("recent").innerHTML = "Recent: " + r;
 }
 
 function saveRecent(route, timeStr) {
-  var map = { "KX-NCL":"KGX→NCL","NCL-KX":"NCL→KGX","STP-NCL":"STP→NCL","NCL-STP":"NCL→STP" };
-  var line = map[route] + "@" + timeStr;
+  const map = {
+    "KGX-NCL":"KGX→NCL",
+    "NCL-KGX":"NCL→KGX",
+    "STP-NCL":"STP→NCL",
+    "NCL-STP":"NCL→STP"
+  };
+  const line = map[route] + "@" + timeStr;
   recentMemory = line;
-  try { localStorage.setItem("recentTrip", line); } catch(e){}
+  try { localStorage.setItem("recentTrip", line); } catch(e) {}
 }
 
-// BUILD SELECT
 function buildSelect(id, start, end, selected) {
-  var el = document.getElementById(id);
-  for (var i = start; i <= end; i++) {
-    var val = i; if(i<10) val="0"+i;
-    var opt = document.createElement("option");
-    opt.value=i; opt.text=val;
-    if(i===selected) opt.selected=true;
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  for (let i = start; i <= end; i++) {
+    let val = i < 10 ? "0"+i : i;
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.text = val;
+    if (i === selected) opt.selected = true;
     el.appendChild(opt);
   }
 }
 
-// MONTH SELECT
 function buildMonthSelect() {
-  var names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  var el = document.getElementById("month");
-  var now = new Date().getMonth() + 1;
-  for(var i=1;i<=12;i++){
-    var num=i; if(i<10) num="0"+i;
-    var opt=document.createElement("option");
-    opt.value=i; opt.text=num + ": "+names[i-1];
-    if(i===now) opt.selected=true;
+  const names = ["January","February","March","April","May","June",
+                 "July","August","September","October","November","December"];
+  const el = document.getElementById("month");
+  el.innerHTML = "";
+  const now = new Date().getMonth() + 1;
+  for (let i=1; i<=12; i++) {
+    let num = i < 10 ? "0"+i : i;
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.text = num + ": " + names[i-1];
+    if (i === now) opt.selected = true;
     el.appendChild(opt);
   }
 }
 
-// DATE TEXT
 function getDateText() {
-  var d=document.getElementById("day").value;
-  var m=document.getElementById("month").value;
-  var y=document.getElementById("year").value;
-  if(d<10) d="0"+d;
-  if(m<10) m="0"+m;
+  let d = document.getElementById("day").value;
+  let m = document.getElementById("month").value;
+  let y = document.getElementById("year").value;
+  if (d<10) d="0"+d;
+  if (m<10) m="0"+m;
   return d + "-" + m + "-" + y;
 }
 
-// FORMAT TIME
+async function run() {
+  clearTimeout(refreshTimer);
+
+  const route = document.getElementById("route").value;
+  const h = parseInt(document.getElementById("hour").value);
+  const m = parseInt(document.getElementById("minute").value);
+  const timeStr = format(h*60 + m);
+  selectedTime = h*60 + m;
+
+  saveRecent(route, timeStr);
+  loadRecent();
+
+  let html = `<b>Date:</b> ${getDateText()}<br><b>Time:</b> ${timeStr}<hr>`;
+
+  try {
+    const response = await fetch(`https://train-api-v2.onrender.com/api/train/${route}`);
+    const json = await response.json();
+
+    if (json.error) {
+      html += `<span style='color:red'>Error fetching train data.</span>`;
+    } else {
+      html += "<ul>";
+      json.data.forEach(train => {
+        html += `<li><b>Time:</b> ${train.time} | <b>Platform:</b> ${train.platform} | <b>Status:</b> ${train.status} | <b>Operator:</b> ${train.operator}</li>`;
+      });
+      html += "</ul>";
+    }
+  } catch(err) {
+    html += `<span style='color:red'>Error fetching train data.</span>`;
+  }
+
+  document.getElementById("output").innerHTML = html;
+
+  // Refresh every 15s if user still on page
+  refreshTimer = setTimeout(run, 15000);
+}
+
 function format(mins) {
   mins = mins % 1440;
-  if(mins<0) mins+=1440;
-  var h=Math.floor(mins/60);
-  var m=mins%60;
-  if(h<10) h="0"+h;
-  if(m<10) m="0"+m;
-  return h+":"+m;
+  if (mins < 0) mins += 1440;
+  const h = Math.floor(mins/60);
+  const m = mins%60;
+  return (h<10?"0"+h:h)+":"+(m<10?"0"+m:m);
 }
 
 window.onload = init;
