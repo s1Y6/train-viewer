@@ -2,15 +2,15 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v8.3</title>
+  <title>Train Viewer v8.4</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">Train Viewer v8.3</h2>
-  <p style="margin:0;color:yellow;">Recent trip memory added</p>
+  <h2 style="margin:0;color:lime;">Train Viewer v8.4</h2>
+  <p style="margin:0;color:yellow;">Stable display fix</p>
 </div>
 
 <hr>
@@ -48,7 +48,6 @@
 <hr>
 
 <div id="output">
-<b>Train Viewer v8.3</b><br><br>
 Enter details and press search
 </div>
 
@@ -71,14 +70,13 @@ function init() {
   loadRecent();
 }
 
-// LOAD RECENT
+// RECENT
 function loadRecent() {
   var r = localStorage.getItem("recentTrip");
   if (!r) r = "None";
   document.getElementById("recent").innerHTML = "Recent: " + r;
 }
 
-// SAVE RECENT
 function saveRecent(route, timeStr) {
 
   var map = {
@@ -93,7 +91,7 @@ function saveRecent(route, timeStr) {
   localStorage.setItem("recentTrip", line);
 }
 
-// NORMAL SELECT
+// BUILD SELECT
 function buildSelect(id, start, end, selected) {
 
   var el = document.getElementById(id);
@@ -139,7 +137,7 @@ function buildMonthSelect() {
   }
 }
 
-// GET DATE
+// DATE TEXT
 function getDateText() {
 
   var d = document.getElementById("day").value;
@@ -164,11 +162,10 @@ function run() {
 
   selectedTime = (h * 60) + m;
 
-  // SAVE RECENT
   saveRecent(route, timeStr);
   loadRecent();
 
-  var html = "<b>Train Viewer v8.3</b><br><br>";
+  var html = "";
 
   html += "<b>Date:</b> " + getDateText() + "<br>";
   html += "<b>Time:</b> " + timeStr + "<br><hr>";
@@ -178,7 +175,7 @@ function run() {
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAINS
+// BUILD TRAINS (LINKS = MOST STABLE)
 function buildTrains() {
 
   var before = selectedTime - 25;
@@ -187,11 +184,14 @@ function buildTrains() {
 
   var out = "";
 
-  out += "<button style='color:white;background:black;' onclick='showTrain(" + before + ")'>Earlier: " + format(before) + "</button><br><br>";
+  out += "<span style='color:white;'>Earlier: " + format(before) + "</span> ";
+  out += "<a href='#' onclick='showTrain(" + before + ")' style='color:yellow;'>[View]</a><br><br>";
 
-  out += "<button style='color:white;background:black;' onclick='showTrain(" + closest + ")'>Immediate: " + format(closest) + "</button><br><br>";
+  out += "<span style='color:white;'>Immediate: " + format(closest) + "</span> ";
+  out += "<a href='#' onclick='showTrain(" + closest + ")' style='color:yellow;'>[View]</a><br><br>";
 
-  out += "<button style='color:white;background:black;' onclick='showTrain(" + after + ")'>Later: " + format(after) + "</button>";
+  out += "<span style='color:white;'>Later: " + format(after) + "</span> ";
+  out += "<a href='#' onclick='showTrain(" + after + ")' style='color:yellow;'>[View]</a>";
 
   return out;
 }
@@ -205,8 +205,6 @@ function showTrain(mins) {
 
   var html = "<div style='color:white;'>";
 
-  html += "<b>Train Viewer v8.3</b><br><br>";
-
   html += "<b>Operator:</b> " + operator + "<br><br>";
   html += "<b>Platform:</b> " + platform + "<br><br>";
 
@@ -219,7 +217,7 @@ function showTrain(mins) {
   html += "Depart: " + format(mins) + "<br>";
   html += "Arrive: " + format(mins + 155) + "<br><br>";
 
-  html += "<button onclick='run()'>Back</button>";
+  html += "<a href='#' onclick='run()' style='color:yellow;'>[Back]</a>";
 
   html += "</div>";
 
