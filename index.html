@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer v8.11</title>
+<title>Train Viewer v8.12</title>
 <style>
   body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 1em; }
   select, button { padding: 0.5em; margin: 0.3em 0; font-size: 1em; }
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h1>Train Viewer v8.11</h1>
+<h1>Train Viewer v8.12</h1>
 
 <label class="label">Route:</label>
 <select id="route">
@@ -23,7 +23,7 @@
   <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
 
-<label class="label">When:</label>
+<label class="label">Date:</label>
 <select id="day"></select>
 <select id="month"></select>
 <select id="year"></select>
@@ -37,7 +37,6 @@
 <div id="results"></div>
 
 <script>
-  // Populate day, month, year, hour, minute
   const daySelect = document.getElementById("day");
   const monthSelect = document.getElementById("month");
   const yearSelect = document.getElementById("year");
@@ -49,7 +48,7 @@
   for (let d = 1; d <= 31; d++) {
     const opt = document.createElement("option");
     opt.value = d;
-    opt.text = d;
+    opt.text = d.toString().padStart(2,"0");
     daySelect.add(opt);
   }
 
@@ -114,7 +113,6 @@
 
   document.getElementById("search").addEventListener("click", fetchTrains);
 
-  // Auto-refresh every 15s if results are visible
   setInterval(() => {
     if(resultsDiv.innerHTML.trim() && !resultsDiv.innerHTML.includes("Error")) {
       fetchTrains();
