@@ -3,124 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Train Viewer v8.10</title>
+<title>Train Viewer v8.11</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-  select, button { padding: 8px; margin: 5px 0; width: 100%; }
-  #results { margin-top: 20px; }
-  .train { border-bottom: 1px solid #ccc; padding: 8px 0; }
+  body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 1em; }
+  select, button { padding: 0.5em; margin: 0.3em 0; font-size: 1em; }
+  .label { font-weight: bold; margin-top: 1em; display: block; }
+  #results { margin-top: 1em; }
 </style>
 </head>
 <body>
-<h1>Train Viewer v8.10</h1>
 
-<label for="route">Route</label>
+<h1>Train Viewer v8.11</h1>
+
+<label class="label">Route:</label>
 <select id="route">
-  <option value="">Select Route</option>
   <option value="KGX-NCL">King's X → Newcastle</option>
   <option value="NCL-KGX">Newcastle → King's X</option>
   <option value="STP-NCL">St. Pancras → Newcastle</option>
   <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
 
-<label for="year">Year</label>
+<label class="label">When:</label>
+<select id="day"></select>
+<select id="month"></select>
 <select id="year"></select>
 
-<label for="month">Month</label>
-<select id="month"></select>
-
-<label for="day">Day</label>
-<select id="day"></select>
-
-<label for="hour">Hour</label>
-<select id="hour"></select>
-
-<label for="minute">Minute</label>
+<label class="label">Time:</label>
+<select id="hour"></select> :
 <select id="minute"></select>
 
-<button id="searchBtn">Search Trains</button>
+<button id="search">Search Trains</button>
 
-<div id="results">Search to see train times</div>
+<div id="results"></div>
 
 <script>
-const apiURL = "https://train-api-v2.onrender.com/trains";
-
-function populateSelectors() {
-  const yearSelect = document.getElementById("year");
-  const monthSelect = document.getElementById("month");
+  // Populate day, month, year, hour, minute
   const daySelect = document.getElementById("day");
+  const monthSelect = document.getElementById("month");
+  const yearSelect = document.getElementById("year");
   const hourSelect = document.getElementById("hour");
   const minuteSelect = document.getElementById("minute");
-
-  yearSelect.innerHTML = "";
-  monthSelect.innerHTML = "";
-  daySelect.innerHTML = "";
-  hourSelect.innerHTML = "";
-  minuteSelect.innerHTML = "";
-
-  yearSelect.appendChild(new Option("Select Year", ""));
-  monthSelect.appendChild(new Option("Select Month", ""));
-  daySelect.appendChild(new Option("Select Day", ""));
-  hourSelect.appendChild(new Option("Select Hour", ""));
-  minuteSelect.appendChild(new Option("Select Minute", ""));
-
-  for (let y = 2026; y <= 2036; y++) yearSelect.appendChild(new Option(y, y));
-  for (let m = 1; m <= 12; m++) monthSelect.appendChild(new Option(m.toString().padStart(2,"0"), m.toString().padStart(2,"0")));
-  for (let d = 1; d <= 31; d++) daySelect.appendChild(new Option(d.toString().padStart(2,"0"), d.toString().padStart(2,"0")));
-  for (let h = 0; h <= 23; h++) hourSelect.appendChild(new Option(h.toString().padStart(2,"0"), h.toString().padStart(2,"0")));
-  for (let mi = 0; mi < 60; mi += 5) minuteSelect.appendChild(new Option(mi.toString().padStart(2,"0"), mi.toString().padStart(2,"0")));
-}
-
-async function searchTrains() {
-  const route = document.getElementById("route").value;
-  const year = document.getElementById("year").value;
-  const month = document.getElementById("month").value;
-  const day = document.getElementById("day").value;
-  const hour = document.getElementById("hour").value;
-  const minute = document.getElementById("minute").value;
-
-  if (!route || !year || !month || !day || !hour || !minute) {
-    alert("Please select all options.");
-    return;
-  }
-
   const resultsDiv = document.getElementById("results");
-  resultsDiv.textContent = "Loading...";
 
-  const dateStr = `${day}-${month}-${year}`;
-  const timeStr = `${hour}:${minute}`;
-
-  try {
-    const res = await fetch(`${apiURL}?route=${route}&date=${dateStr}&time=${timeStr}`);
-    if (!res.ok) throw new Error("API fetch failed");
-
-    const data = await res.json();
-
-    resultsDiv.innerHTML = "";
-
-    if (!data.data || data.data.length === 0) {
-      resultsDiv.textContent = "No trains found";
-      return;
-    }
-
-    data.data.forEach(train => {
-      const div = document.createElement("div");
-      div.className = "train";
-      div.textContent = `Time: ${train.time} | Platform: ${train.platform || "-"} | Status: ${train.status} | Operator: ${train.operator}`;
-      resultsDiv.appendChild(div);
-    });
-
-    setTimeout(searchTrains, 15000); // Auto-refresh 15s
-  } catch (err) {
-    resultsDiv.textContent = "Error fetching train data.";
-    console.error(err);
+  // Day 1-31
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.text = d;
+    daySelect.add(opt);
   }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-  populateSelectors();
-  document.getElementById("searchBtn").addEventListener("click", searchTrains);
-});
+  // Month 1-12 with short names
+  const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  for (let m = 0; m < 12; m++) {
+    const opt = document.createElement("option");
+    opt.value = m+1;
+    opt.text = `${m+1} - ${monthNames[m]}`;
+    monthSelect.add(opt);
+  }
+
+  // Year 2026-2036
+  for (let y = 2026; y <= 2036; y++) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.text = y;
+    yearSelect.add(opt);
+  }
+
+  // Hour 0-23
+  for (let h = 0; h <= 23; h++) {
+    const opt = document.createElement("option");
+    opt.value = h;
+    opt.text = h.toString().padStart(2,"0");
+    hourSelect.add(opt);
+  }
+
+  // Minute every 5 minutes
+  for (let m = 0; m <= 55; m+=5) {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.text = m.toString().padStart(2,"0");
+    minuteSelect.add(opt);
+  }
+
+  async function fetchTrains() {
+    const route = document.getElementById("route").value;
+    const day = daySelect.value.padStart(2,"0");
+    const month = monthSelect.value.padStart(2,"0");
+    const year = yearSelect.value;
+    const hour = hourSelect.value.padStart(2,"0");
+    const minute = minuteSelect.value.padStart(2,"0");
+
+    resultsDiv.innerHTML = "Loading...";
+
+    try {
+      const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${route}`);
+      const data = await res.json();
+      if(data.error) {
+        resultsDiv.innerHTML = `<span style="color:red;">${data.error}</span>`;
+        return;
+      }
+      resultsDiv.innerHTML = data.data.map(t => `
+        Time: ${t.time} | Platform: ${t.platform} | Status: ${t.status} | Operator: ${t.operator}
+      `).join("<br>");
+    } catch(e) {
+      resultsDiv.innerHTML = `<span style="color:red;">Error fetching train data.</span>`;
+      console.error(e);
+    }
+  }
+
+  document.getElementById("search").addEventListener("click", fetchTrains);
+
+  // Auto-refresh every 15s if results are visible
+  setInterval(() => {
+    if(resultsDiv.innerHTML.trim() && !resultsDiv.innerHTML.includes("Error")) {
+      fetchTrains();
+    }
+  }, 15000);
 </script>
 </body>
 </html>
