@@ -1,11 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Train Viewer v8.6</title>
+  <style>
+    body {
+      background:black;
+      color:lime;
+      font-family:monospace;
+      font-size:14px;
+    }
+    button {
+      margin: 3px 0;
+      padding: 3px 6px;
+      background: black;
+      color: lime;
+      border: 1px solid lime;
+      cursor: pointer;
+    }
+    button:hover {
+      background: lime;
+      color: black;
+    }
+  </style>
 </head>
 
-<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
+<body>
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
@@ -16,11 +36,9 @@
 <hr>
 
 <div id="recent">Recent: None</div>
-
 <hr>
 
 <p><b>Route</b></p>
-
 <select id="route">
   <option value="KX-NCL">King's X → Newcastle</option>
   <option value="NCL-KX">Newcastle → King's X</option>
@@ -31,20 +49,16 @@
 <hr>
 
 <p><b>Date</b></p>
-
 <select id="day"></select>
 <select id="month"></select>
 <select id="year"></select>
 
 <p><b>Time</b></p>
-
 <select id="hour"></select>
 <select id="minute"></select>
 
 <br><br>
-
 <button onclick="run()">Search Trains</button>
-
 <hr>
 
 <div id="output">
@@ -52,215 +66,146 @@ Enter details and press search
 </div>
 
 <script>
-
-var selectedTime = 0;
+var refreshInterval = null;
+var countdown = 15;
+var currentRoute = null;
 var recentMemory = "None";
 
 // INIT
 function init() {
-
   var now = new Date();
-
   buildSelect("day", 1, 31, now.getDate());
   buildMonthSelect();
   buildSelect("year", 2025, 2035, now.getFullYear());
-
   buildSelect("hour", 0, 23, now.getHours());
   buildSelect("minute", 0, 59, now.getMinutes());
-
   loadRecent();
 }
 
-// RECENT
-function loadRecent() {
+// MAIN SEARCH
+function run() {
+  var route = document.getElementById("route").value;
+  var h = parseInt(document.getElementById("hour").value);
+  var m = parseInt(document.getElementById("minute").value);
+  var timeStr = format(h * 60 + m);
+  saveRecent(route, timeStr);
+  loadRecent();
 
-  var r;
+  currentRoute = route; // store current route for auto-refresh
+  countdown = 15;       // reset countdown
 
-  try {
-    r = localStorage.getItem("recentTrip");
-  } catch(e) {
-    r = null;
+  fetchTrains(route);
+  setupAutoRefresh();
+}
+
+// FETCH TRAIN DATA FROM BACKEND
+function fetchTrains(route) {
+  fetch(`https://<your-render-app>.onrender.com/api/train/${route}`)
+    .then(res => res.json())
+    .then(data => {
+      displayTrains(data);
+    })
+    .catch(err => {
+      document.getElementById("output").innerHTML = "Error fetching train data.";
+      console.error(err);
+    });
+}
+
+// DISPLAY TRAINS
+function displayTrains(data) {
+  var html = "<b>Date:</b> " + getDateText() + "<br>";
+  html += "<b>Route:</b> " + currentRoute + "<br><hr>";
+
+  if (!data || data.length === 0) {
+    html += "No departures found.<br>";
+  } else {
+    data.forEach(t => {
+      html += `Time: ${t.depart} → Arrive: ${t.arrive}, Platform: ${t.platform}, Status: ${t.status}, Operator: ${t.operator}<br>`;
+    });
   }
 
-  if (!r) r = recentMemory;
+  html += `<br><div id="countdownText">Refreshing in: ${countdown}s</div>`;
+  document.getElementById("output").innerHTML = html;
+}
 
+// AUTO REFRESH SETUP
+function setupAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+
+  refreshInterval = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      countdown = 15;
+      if (currentRoute) fetchTrains(currentRoute);
+    }
+    var countdownEl = document.getElementById("countdownText");
+    if (countdownEl) countdownEl.innerHTML = `Refreshing in: ${countdown}s`;
+  }, 1000);
+}
+
+// RECENT ROUTES
+function loadRecent() {
+  var r;
+  try { r = localStorage.getItem("recentTrip"); } catch(e){ r=null; }
+  if (!r) r = recentMemory;
   document.getElementById("recent").innerHTML = "Recent: " + r;
 }
 
 function saveRecent(route, timeStr) {
-
-  var map = {
-    "KX-NCL":"KX→NCL",
-    "NCL-KX":"NCL→KX",
-    "STP-NCL":"STP→NCL",
-    "NCL-STP":"NCL→STP"
-  };
-
+  var map = { "KX-NCL":"KGX→NCL","NCL-KX":"NCL→KGX","STP-NCL":"STP→NCL","NCL-STP":"NCL→STP" };
   var line = map[route] + "@" + timeStr;
-
   recentMemory = line;
-
-  try {
-    localStorage.setItem("recentTrip", line);
-  } catch(e) {}
+  try { localStorage.setItem("recentTrip", line); } catch(e){}
 }
 
 // BUILD SELECT
 function buildSelect(id, start, end, selected) {
-
   var el = document.getElementById(id);
-
   for (var i = start; i <= end; i++) {
-
-    var val = i;
-    if (i < 10) val = "0" + i;
-
+    var val = i; if(i<10) val="0"+i;
     var opt = document.createElement("option");
-    opt.value = i;
-    opt.text = val;
-
-    if (i === selected) opt.selected = true;
-
+    opt.value=i; opt.text=val;
+    if(i===selected) opt.selected=true;
     el.appendChild(opt);
   }
 }
 
 // MONTH SELECT
 function buildMonthSelect() {
-
-  var names = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-
+  var names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var el = document.getElementById("month");
   var now = new Date().getMonth() + 1;
-
-  for (var i = 1; i <= 12; i++) {
-
-    var num = i;
-    if (i < 10) num = "0" + i;
-
-    var opt = document.createElement("option");
-    opt.value = i;
-    opt.text = num + ": " + names[i-1];
-
-    if (i === now) opt.selected = true;
-
+  for(var i=1;i<=12;i++){
+    var num=i; if(i<10) num="0"+i;
+    var opt=document.createElement("option");
+    opt.value=i; opt.text=num + ": "+names[i-1];
+    if(i===now) opt.selected=true;
     el.appendChild(opt);
   }
 }
 
 // DATE TEXT
 function getDateText() {
-
-  var d = document.getElementById("day").value;
-  var m = document.getElementById("month").value;
-  var y = document.getElementById("year").value;
-
-  if (d < 10) d = "0" + d;
-  if (m < 10) m = "0" + m;
-
+  var d=document.getElementById("day").value;
+  var m=document.getElementById("month").value;
+  var y=document.getElementById("year").value;
+  if(d<10) d="0"+d;
+  if(m<10) m="0"+m;
   return d + "-" + m + "-" + y;
-}
-
-// MAIN
-function run() {
-
-  var route = document.getElementById("route").value;
-
-  var h = parseInt(document.getElementById("hour").value);
-  var m = parseInt(document.getElementById("minute").value);
-
-  var timeStr = format((h * 60) + m);
-
-  selectedTime = (h * 60) + m;
-
-  saveRecent(route, timeStr);
-  loadRecent();
-
-  var html = "";
-
-  html += "<b>Date:</b> " + getDateText() + "<br>";
-  html += "<b>Time:</b> " + timeStr + "<br><hr>";
-
-  html += buildTrains();
-
-  document.getElementById("output").innerHTML = html;
-}
-
-// BUILD TRAINS (UPDATED FORMAT)
-function buildTrains() {
-
-  var before = selectedTime - 25;
-  var closest = selectedTime;
-  var after = selectedTime + 25;
-
-  var out = "";
-
-  out += "<button onclick='showTrain(" + before + ")'><span style='color:lime;'>" + format(before) + "</span> - Earlier</button><br><br>";
-
-  out += "<button onclick='showTrain(" + closest + ")'><span style='color:lime;'>" + format(closest) + "</span> - Immediate</button><br><br>";
-
-  out += "<button onclick='showTrain(" + after + ")'><span style='color:lime;'>" + format(after) + "</span> - Later</button>";
-
-  return out;
-}
-
-// DETAILS
-function showTrain(mins) {
-
-  var operator = pickOperator(mins);
-  var platform = (mins % 10) + 1;
-  var delay = mins % 7;
-
-  var html = "<div style='color:white;'>";
-
-  html += "<b>Operator:</b> " + operator + "<br><br>";
-  html += "<b>Platform:</b> " + platform + "<br><br>";
-
-  if (delay === 0) {
-    html += "Status: On time<br><br>";
-  } else {
-    html += "Status: +" + delay + " min late<br><br>";
-  }
-
-  html += "Depart: " + format(mins) + "<br>";
-  html += "Arrive: " + format(mins + 155) + "<br><br>";
-
-  html += "<button onclick='run()'>Back</button>";
-
-  html += "</div>";
-
-  document.getElementById("output").innerHTML = html;
-}
-
-// OPERATOR
-function pickOperator(mins) {
-  var r = mins % 3;
-
-  if (r === 0) return "LNER";
-  if (r === 1) return "Lumo";
-  return "CrossCountry";
 }
 
 // FORMAT TIME
 function format(mins) {
-
   mins = mins % 1440;
-  if (mins < 0) mins += 1440;
-
-  var h = Math.floor(mins / 60);
-  var m = mins % 60;
-
-  if (h < 10) h = "0" + h;
-  if (m < 10) m = "0" + m;
-
-  return h + ":" + m;
+  if(mins<0) mins+=1440;
+  var h=Math.floor(mins/60);
+  var m=mins%60;
+  if(h<10) h="0"+h;
+  if(m<10) m="0"+m;
+  return h+":"+m;
 }
 
 window.onload = init;
-
 </script>
 
 </body>
