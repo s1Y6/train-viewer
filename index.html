@@ -1,162 +1,217 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Train Viewer v8.8.1</title>
-<style>
-body { font-family: sans-serif; padding: 20px; }
-select, button { margin: 5px; padding: 5px; }
-#output { margin-top: 20px; }
-</style>
+  <meta charset="utf-8">
+  <title>Train Viewer v8.8</title>
 </head>
-<body>
 
-<h1>Train Viewer v8.7</h1>
-<p id="recent">Recent: None</p>
+<body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
-<label for="route">Route:</label>
+<!-- HEADER -->
+<div style="border-bottom:1px solid lime;padding-bottom:5px;">
+  <h2 style="margin:0;color:lime;">Train Viewer v8.8</h2>
+  <p style="margin:0;color:yellow;">Improved train layout</p>
+</div>
+
+<hr>
+
+<div id="recent">Recent: None</div>
+
+<hr>
+
+<p><b>Route</b></p>
+
 <select id="route">
-  <option value="KGX-NCL">King's X → Newcastle</option>
-  <option value="NCL-KGX">Newcastle → King's X</option>
-  <option value="STP-NCL">St Pancras → Newcastle</option>
-  <option value="NCL-STP">Newcastle → St Pancras</option>
+  <option value="KX-NCL">King's X → Newcastle</option>
+  <option value="NCL-KX">Newcastle → King's X</option>
+  <option value="STP-NCL">St. Pancras → Newcastle</option>
+  <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
 
-<label for="day">Day:</label>
+<hr>
+
+<p><b>Date</b></p>
+
 <select id="day"></select>
-<label for="month">Month:</label>
 <select id="month"></select>
-<label for="year">Year:</label>
 <select id="year"></select>
 
-<label for="hour">Hour:</label>
+<p><b>Time</b></p>
+
 <select id="hour"></select>
-<label for="minute">Minute:</label>
 <select id="minute"></select>
+
+<br><br>
 
 <button onclick="run()">Search Trains</button>
 
-<div id="output"></div>
+<hr>
+
+<div id="output">
+Enter details and press search
+</div>
 
 <script>
-const API_URL = "https://train-api-v2.onrender.com"; // Your live Render API
-const API_TOKEN = "a4ea454d-be6d-4a1f-9030-752640015d99"; // National Rail Darwin Lite token
 
-let selectedRoute = null;
-let selectedTime = null;
-let autoRefreshTimer = null;
+var selectedTime = 0;
+var recentMemory = "None";
+var refreshInterval = null;
 
 // INIT
 function init() {
-  const now = new Date();
+  var now = new Date();
+
   buildSelect("day", 1, 31, now.getDate());
   buildMonthSelect();
   buildSelect("year", 2025, 2035, now.getFullYear());
+
   buildSelect("hour", 0, 23, now.getHours());
   buildSelect("minute", 0, 59, now.getMinutes());
+
   loadRecent();
 }
 
-function buildSelect(id, start, end, selected) {
-  const el = document.getElementById(id);
-  for (let i=start; i<=end; i++) {
-    let val = i<10 ? "0"+i : i;
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.text = val;
-    if (i===selected) opt.selected=true;
-    el.appendChild(opt);
-  }
-}
-
-function buildMonthSelect() {
-  const names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const el = document.getElementById("month");
-  const now = new Date().getMonth()+1;
-  for (let i=1;i<=12;i++){
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.text = (i<10?"0"+i:i) + ": "+names[i-1];
-    if (i===now) opt.selected=true;
-    el.appendChild(opt);
-  }
-}
-
-function getDateText() {
-  let d = document.getElementById("day").value;
-  let m = document.getElementById("month").value;
-  let y = document.getElementById("year").value;
-  if (d<10) d="0"+d;
-  if (m<10) m="0"+m;
-  return `${d}-${m}-${y}`;
-}
-
-// RECENT MEMORY
+// RECENT
 function loadRecent() {
-  const r = localStorage.getItem("recentTrip") || "None";
+  var r;
+  try {
+    r = localStorage.getItem("recentTrip");
+  } catch(e) {
+    r = null;
+  }
+  if (!r) r = recentMemory;
   document.getElementById("recent").innerHTML = "Recent: " + r;
 }
 
 function saveRecent(route, timeStr) {
-  const map = { "KGX-NCL":"KGX→NCL", "NCL-KGX":"NCL→KGX", "STP-NCL":"STP→NCL", "NCL-STP":"NCL→STP" };
-  const line = map[route] + "@" + timeStr;
-  try { localStorage.setItem("recentTrip", line); } catch(e) {}
-  document.getElementById("recent").innerHTML = "Recent: " + line;
+  var map = {
+    "KX-NCL":"KGX→NCL",
+    "NCL-KX":"NCL→KGX",
+    "STP-NCL":"STP→NCL",
+    "NCL-STP":"NCL→STP"
+  };
+  var line = map[route] + "@" + timeStr;
+  recentMemory = line;
+  try {
+    localStorage.setItem("recentTrip", line);
+  } catch(e) {}
+}
+
+// BUILD SELECT
+function buildSelect(id, start, end, selected) {
+  var el = document.getElementById(id);
+  for (var i = start; i <= end; i++) {
+    var val = i;
+    if (i < 10) val = "0" + i;
+    var opt = document.createElement("option");
+    opt.value = i;
+    opt.text = val;
+    if (i === selected) opt.selected = true;
+    el.appendChild(opt);
+  }
+}
+
+// MONTH SELECT
+function buildMonthSelect() {
+  var names = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+  var el = document.getElementById("month");
+  var now = new Date().getMonth() + 1;
+  for (var i = 1; i <= 12; i++) {
+    var num = i;
+    if (i < 10) num = "0" + i;
+    var opt = document.createElement("option");
+    opt.value = i;
+    opt.text = num + ": " + names[i-1];
+    if (i === now) opt.selected = true;
+    el.appendChild(opt);
+  }
+}
+
+// DATE TEXT
+function getDateText() {
+  var d = document.getElementById("day").value;
+  var m = document.getElementById("month").value;
+  var y = document.getElementById("year").value;
+  if (d < 10) d = "0" + d;
+  if (m < 10) m = "0" + m;
+  return d + "-" + m + "-" + y;
 }
 
 // FORMAT TIME
 function format(mins) {
   mins = mins % 1440;
-  if (mins<0) mins+=1440;
-  let h=Math.floor(mins/60);
-  let m=mins%60;
-  if(h<10) h="0"+h;
-  if(m<10) m="0"+m;
-  return h+":"+m;
+  if (mins < 0) mins += 1440;
+  var h = Math.floor(mins / 60);
+  var m = mins % 60;
+  if (h < 10) h = "0" + h;
+  if (m < 10) m = "0" + m;
+  return h + ":" + m;
 }
 
-// MAIN SEARCH
-async function run() {
-  clearTimeout(autoRefreshTimer);
-
-  const route = document.getElementById("route").value;
-  const h = parseInt(document.getElementById("hour").value);
-  const m = parseInt(document.getElementById("minute").value);
-  const timeStr = format(h*60+m);
-  selectedRoute = route;
-  selectedTime = timeStr;
-
-  saveRecent(route, timeStr);
-
-  const htmlHeader = `<b>Date:</b> ${getDateText()}<br><b>Time:</b> ${timeStr}<br><hr>`;
-  document.getElementById("output").innerHTML = htmlHeader + "<b>Loading train data...</b>";
-
+// FETCH LIVE TRAINS
+async function fetchTrains(route, date, time) {
   try {
-    const response = await fetch(`${API_URL}/trains?route=${route}&date=${getDateText()}&time=${timeStr}&token=${API_TOKEN}`);
-    if(!response.ok) throw new Error("Failed to fetch train data");
-    const result = await response.json();
-
-    let html = htmlHeader;
-    if(result.data && result.data.length>0){
-      result.data.forEach(train=>{
-        html += `Time: ${train.time} | Platform: ${train.platform} | Status: ${train.status} | Operator: ${train.operator}<br>`;
-      });
-    } else {
-      html += "No trains found for this time.";
-    }
-    document.getElementById("output").innerHTML = html;
-
-    // Auto-refresh every 15 seconds if user still on same route
-    autoRefreshTimer = setTimeout(()=>{
-      if(route===selectedRoute && timeStr===selectedTime) run();
-    }, 15000);
-
+    const res = await fetch(`https://train-api-v2.onrender.com/trains?route=${route}&date=${date}&time=${time}`);
+    if (!res.ok) throw new Error("API fetch failed");
+    const json = await res.json();
+    return json.data;
   } catch(e) {
-    document.getElementById("output").innerHTML = `<b style="color:red;">Error fetching train data.</b><br>${e.message}`;
+    console.error(e);
+    return null;
   }
 }
 
+// MAIN
+async function run() {
+  var route = document.getElementById("route").value;
+  var h = parseInt(document.getElementById("hour").value);
+  var m = parseInt(document.getElementById("minute").value);
+  var timeStr = format((h * 60) + m);
+  selectedTime = (h * 60) + m;
+
+  saveRecent(route, timeStr);
+  loadRecent();
+
+  displayOutput("Loading...");
+
+  const dateStr = getDateText();
+  const trains = await fetchTrains(route, dateStr, timeStr);
+
+  if (!trains) {
+    displayOutput("Error fetching train data.");
+    return;
+  }
+
+  displayTrains(trains, dateStr, timeStr);
+
+  // Clear previous interval
+  if (refreshInterval) clearInterval(refreshInterval);
+
+  // Set up auto-refresh every 15 seconds
+  refreshInterval = setInterval(async () => {
+    const updatedTrains = await fetchTrains(route, dateStr, timeStr);
+    if (updatedTrains) displayTrains(updatedTrains, dateStr, timeStr);
+  }, 15000);
+}
+
+function displayOutput(html) {
+  document.getElementById("output").innerHTML = html;
+}
+
+function displayTrains(trains, dateStr, timeStr) {
+  let html = `<b>Date:</b> ${dateStr}<br><b>Time:</b> ${timeStr}<br><hr>`;
+  trains.forEach(train => {
+    html += `Time: ${train.time} | Platform: ${train.platform} | Status: ${train.status} | Operator: ${train.operator}<br>`;
+  });
+  displayOutput(html);
+}
+
 window.onload = init;
+
 </script>
+
 </body>
 </html>
