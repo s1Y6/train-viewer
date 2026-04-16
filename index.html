@@ -2,98 +2,121 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Train Viewer v7.5</title>
+  <title>Train Viewer v8.0</title>
 </head>
 
 <body style="background:black;color:lime;font-family:monospace;font-size:14px;">
 
 <!-- HEADER -->
 <div style="border-bottom:1px solid lime;padding-bottom:5px;">
-  <h2 style="margin:0;color:lime;">🚆 Train Viewer v7.5</h2>
-  <p style="margin:0;color:yellow;">Stable UI + visible buttons</p>
+  <h2 style="margin:0;color:lime;">🚆 Train Viewer v8.0</h2>
+  <p style="margin:0;color:yellow;">Custom date + time picker</p>
 </div>
 
 <hr>
 
 <p><b>Route</b></p>
 
-<select id="route" style="background:white;color:black;">
+<select id="route">
   <option value="KX-NCL">King's X → Newcastle</option>
   <option value="NCL-KX">Newcastle → King's X</option>
   <option value="STP-NCL">St. Pancras → Newcastle</option>
   <option value="NCL-STP">Newcastle → St. Pancras</option>
 </select>
 
+<hr>
+
 <p><b>Date</b></p>
 
-<input type="date" id="date"
-style="background:white;color:black;border:1px solid lime;">
+<select id="day"></select>
+<select id="month"></select>
+<select id="year"></select>
 
 <p><b>Time</b></p>
 
-<input type="time" id="time"
-style="background:white;color:black;border:1px solid lime;">
+<select id="hour"></select>
+<select id="minute"></select>
 
 <br><br>
 
-<button onclick="run()" style="background:lime;color:black;">
-  Search Trains
-</button>
+<button onclick="run()">Search Trains</button>
 
 <hr>
 
-<!-- DEFAULT OUTPUT (VERSION ALWAYS VISIBLE) -->
 <div id="output">
-<b>Train Viewer v7.5</b><br><br>
+<b>Train Viewer v8.0</b><br><br>
 Enter details and press search
 </div>
 
 <script>
 
 var selectedTime = 0;
-var selectedDate = "";
 
 // INIT
 function init() {
+
   var now = new Date();
 
-  document.getElementById("date").value =
-    now.toISOString().split("T")[0];
+  buildSelect("day", 1, 31, now.getDate());
+  buildSelect("month", 1, 12, now.getMonth() + 1);
+  buildSelect("year", 2020, 2030, now.getFullYear());
 
-  document.getElementById("time").value =
-    now.toTimeString().slice(0,5);
+  buildSelect("hour", 0, 23, now.getHours());
+  buildSelect("minute", 0, 59, now.getMinutes());
+}
+
+// BUILD DROPDOWN
+function buildSelect(id, start, end, selected) {
+
+  var el = document.getElementById(id);
+
+  for (var i = start; i <= end; i++) {
+
+    var val = i;
+    if (i < 10) val = "0" + i;
+
+    var opt = document.createElement("option");
+    opt.value = i;
+    opt.text = val;
+
+    if (i === selected) opt.selected = true;
+
+    el.appendChild(opt);
+  }
 }
 
 // FORMAT DATE
-function formatDate(input) {
-  if (!input) return "Not set";
+function getDateText() {
 
-  var parts = input.split("-");
-  return parts[2] + "-" + parts[1] + "-" + parts[0];
+  var d = document.getElementById("day").value;
+  var m = document.getElementById("month").value;
+  var y = document.getElementById("year").value;
+
+  if (d < 10) d = "0" + d;
+  if (m < 10) m = "0" + m;
+
+  return d + "-" + m + "-" + y;
 }
 
 // MAIN
 function run() {
 
-  var time = document.getElementById("time").value;
-  if (!time) time = "12:00";
+  var h = parseInt(document.getElementById("hour").value);
+  var m = parseInt(document.getElementById("minute").value);
 
-  selectedDate = document.getElementById("date").value;
+  selectedTime = (h * 60) + m;
 
-  var parts = time.split(":");
-  selectedTime = (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+  var html = "<b>Train Viewer v8.0</b><br><br>";
 
-  var html = "<b>Train Viewer v7.5</b><br><br>";
-
-  html += "<b>Date:</b> " + formatDate(selectedDate) + "<br>";
-  html += "<b>Time:</b> " + time + "<br><hr>";
+  html += "<b>Date:</b> " + getDateText() + "<br>";
+  html += "<b>Time:</b> " + format(selectedTime) + "<br><hr>";
 
   html += buildTrains();
 
   document.getElementById("output").innerHTML = html;
 }
 
-// BUILD TRAINS (DARK BUTTONS)
+// BUILD TRAINS (TEXT SAFE)
 function buildTrains() {
 
   var before = selectedTime - 25;
@@ -102,11 +125,14 @@ function buildTrains() {
 
   var out = "";
 
-  out += "<button style='background:black;color:lime;border:1px solid lime;' onclick='showTrain(" + before + ")'>🚆 Before - " + format(before) + "</button><br><br>";
+  out += "🚆 Before - " + format(before) + " ";
+  out += "<button onclick='showTrain(" + before + ")'>View</button><br><br>";
 
-  out += "<button style='background:black;color:yellow;border:1px solid lime;' onclick='showTrain(" + closest + ")'>🚆 ⭐ Closest - " + format(closest) + "</button><br><br>";
+  out += "🚆 ⭐ Closest - " + format(closest) + " ";
+  out += "<button onclick='showTrain(" + closest + ")'>View</button><br><br>";
 
-  out += "<button style='background:black;color:lime;border:1px solid lime;' onclick='showTrain(" + after + ")'>🚆 After - " + format(after) + "</button>";
+  out += "🚆 After - " + format(after) + " ";
+  out += "<button onclick='showTrain(" + after + ")'>View</button>";
 
   return out;
 }
@@ -118,13 +144,10 @@ function showTrain(mins) {
   var platform = (mins % 10) + 1;
   var delay = mins % 7;
 
-  var depart = format(mins);
-  var arrive = format(mins + 155);
-
-  var html = "<b>Train Viewer v7.5</b><br><br>";
+  var html = "<b>Train Viewer v8.0</b><br><br>";
 
   html += "<b>Operator:</b> " + operator + "<br><br>";
-  html += "<b>PLATFORM: " + platform + "</b><br><br>";
+  html += "<b>PLATFORM:</b> " + platform + "<br><br>";
 
   if (delay === 0) {
     html += "Status: On time<br><br>";
@@ -132,10 +155,10 @@ function showTrain(mins) {
     html += "Status: +" + delay + " min late<br><br>";
   }
 
-  html += "Depart: " + depart + "<br>";
-  html += "Arrive: " + arrive + "<br><br>";
+  html += "Depart: " + format(mins) + "<br>";
+  html += "Arrive: " + format(mins + 155) + "<br><br>";
 
-  html += "<button style='background:black;color:lime;border:1px solid lime;' onclick='run()'>← Back</button>";
+  html += "<button onclick='run()'>← Back</button>";
 
   document.getElementById("output").innerHTML = html;
 }
